@@ -5,7 +5,6 @@ namespace Imiphp\Tool\AnnotationMigration\Command;
 
 use Imiphp\Tool\AnnotationMigration\CodeRewriteGenerator;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Exception\LogicException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Logger\ConsoleLogger;
@@ -22,7 +21,7 @@ class AnnotationMigrationCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addOption('dir', 'D', InputOption::VALUE_OPTIONAL, '自定义扫描目录')
+            ->addOption('dir', null, InputOption::VALUE_OPTIONAL|InputOption::VALUE_IS_ARRAY, '自定义扫描目录')
             ->addOption('dry-run', 'd', InputOption::VALUE_NONE, '尝试运行，不生成文件')
             ->setDescription('迁移注解为 PHP8 原生实现');
     }
@@ -31,16 +30,15 @@ class AnnotationMigrationCommand extends Command
     {
         $isDryRun = $input->getOption('dry-run');
 
-        $dirs = [
-            'src/Cron',
-        ];
-        $exclude = [];
+        $dirs = $input->getOption('dir');
 
         $finder = Finder::create()
             ->files()
             ->ignoreVCS(true)
             ->path('.php')
-            ->exclude($exclude)
+            ->filter(function (\SplFileInfo $file) {
+                return !\preg_match('#[\/]?vendor[\/]#iu', $file->getPathname());
+            })
             ->in($dirs);
 
         $logger = new ConsoleLogger($output);
@@ -48,7 +46,6 @@ class AnnotationMigrationCommand extends Command
         $generator = new CodeRewriteGenerator($logger);
 
         foreach ($finder as $item) {
-
             $handle = $generator->generate($item->getRealPath());
 
             if ($handle->isModified()) {

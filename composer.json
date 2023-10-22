@@ -22,6 +22,9 @@
     "require-dev": {
         "imiphp/imi": "3.0.x-dev"
     },
+    "bin": [
+        "bin/imi-migration.php"
+    ],
     "config": {
         "sort-packages": true
     },
