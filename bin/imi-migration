@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 declare(strict_types=1);
 
@@ -8,7 +9,6 @@ use Imiphp\Tool\AnnotationMigration\Command\AnnotationMigrationCommand;
 use Symfony\Component\Console\Application;
 
 (function () {
-    require __DIR__ . '/../../vendor/autoload.php'; // todo 测试
     if (!class_exists(AnnotationMigrationCommand::class))
     {
         (static function () use (&$path) {
@@ -38,9 +38,7 @@ use Symfony\Component\Console\Application;
         })();
     }
 
-    // todo 测试
-    \chdir(\dirname(__DIR__, 2));
-    \var_dump(\getcwd());
+    echo "cwd: " . \getcwd() . PHP_EOL;
 
     $app = new Application('imi phar tool', InstalledVersions::getPrettyVersion('imiphp/annotation-migration') ?: 'dev');
     $command = new AnnotationMigrationCommand();

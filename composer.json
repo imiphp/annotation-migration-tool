@@ -23,7 +23,7 @@
         "imiphp/imi": "3.0.x-dev"
     },
     "bin": [
-        "bin/imi-migration.php"
+        "bin/imi-migration"
     ],
     "config": {
         "sort-packages": true
