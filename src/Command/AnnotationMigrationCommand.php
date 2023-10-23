@@ -50,7 +50,8 @@ class AnnotationMigrationCommand extends Command
                 $handle = $generator->generate($item->getRealPath());
             } catch (\Throwable $throwable) {
                 $output->writeln("Error\t{$item->getRealPath()}");
-                $output->writeln($throwable->getTraceAsString());
+                $output->writeln('> ' . $throwable);
+                $output->writeln('> ' . $throwable->getTraceAsString());
                 continue;
             }
 
