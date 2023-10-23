@@ -46,7 +46,13 @@ class AnnotationMigrationCommand extends Command
         $generator = new CodeRewriteGenerator($logger);
 
         foreach ($finder as $item) {
-            $handle = $generator->generate($item->getRealPath());
+            try {
+                $handle = $generator->generate($item->getRealPath());
+            } catch (\Throwable $throwable) {
+                $output->writeln("Error\t{$item->getRealPath()}");
+                $output->writeln($throwable->getTraceAsString());
+                continue;
+            }
 
             if ($handle->isModified()) {
                 $output->writeln("Rewrite\t{$item->getRealPath()}");
