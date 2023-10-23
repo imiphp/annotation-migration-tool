@@ -31,6 +31,8 @@ class RewriteVisitor extends NodeVisitorAbstract
     /** @var Node\Stmt\UseUse[] */
     protected array $uses = [];
 
+    protected ?Node\Stmt\Class_ $currentClass = null;
+
     public function __construct(
         readonly public HandleCode $handleCode,
         readonly public array $annotations = [],
@@ -48,6 +50,7 @@ class RewriteVisitor extends NodeVisitorAbstract
                 $this->namespace = $node;
                 break;
             case $node instanceof Node\Stmt\Class_:
+                $this->currentClass = $node;
                 if ($node->isAnonymous()) {
                     // 跳过匿名
                     return;
@@ -65,6 +68,7 @@ class RewriteVisitor extends NodeVisitorAbstract
                 if ($reflection->isSubclassOf(ImiAnnotationBase::class)) {
                     return;
                 }
+                // 设置顶级类
                 $this->reflection = $reflection;
                 break;
             case $node instanceof Node\Stmt\Use_:
@@ -77,32 +81,50 @@ class RewriteVisitor extends NodeVisitorAbstract
 
     public function leaveNode(Node $node): ?Node
     {
+        if ($node instanceof Node\Stmt\Class_) {
+            if (null !== $this->currentClass && \spl_object_id($this->currentClass) !== \spl_object_id($node)) {
+                throw new \RuntimeException('Class node not match');
+            }
+            $this->currentClass = null;
+        }
         if (null === $this->reflection) {
             return null;
         }
 
-        return match ($node::class) {
-            Node\Stmt\Class_::class => $this->generateClassAttributes(/* @var $node Node\Stmt\Class_ */ $node),
-            Node\Stmt\ClassMethod::class => $this->generateClassMethodAttributes(/* @var $node Node\Stmt\ClassMethod */ $node),
-            Node\Stmt\Property::class => $this->generateClassPropertyAttributes(/* @var $node Node\Stmt\Property */ $node),
+        return match (true) {
+            $node instanceof Node\Stmt\Class_ => $this->generateClassAttributes(/* @var $node Node\Stmt\Class_ */ $node),
+            $node instanceof Node\Stmt\ClassMethod => $this->generateClassMethodAttributes(/* @var $node Node\Stmt\ClassMethod */ $node),
+            $node instanceof Node\Stmt\Property => $this->generateClassPropertyAttributes(/* @var $node Node\Stmt\Property */ $node),
             default => null,
         };
     }
 
-    private function generateClassAttributes(Node\Stmt\Class_ $node): Node\Stmt\Class_
+    private function generateClassAttributes(Node\Stmt\Class_ $node): ?Node\Stmt\Class_
     {
+        if ($node->isAnonymous()) {
+            // 匿名类不处理
+            return null;
+        }
         $annotations = $this->reader->getClassAnnotations($this->reflection);
         return $this->generateAttributeAndSaveComments($node, $annotations);
     }
 
-    private function generateClassMethodAttributes(Node\Stmt\ClassMethod $node): Node\Stmt\ClassMethod
+    private function generateClassMethodAttributes(Node\Stmt\ClassMethod $node): ?Node\Stmt\ClassMethod
     {
+        if ($this->currentClass?->isAnonymous()) {
+            // 匿名类不处理
+            return null;
+        }
         $method = $this->reflection->getMethod((string) $node->name);
         return $this->generateAttributeAndSaveComments($node, $this->reader->getMethodAnnotations($method));
     }
 
-    private function generateClassPropertyAttributes(Node\Stmt\Property $node): Node\Stmt\Property
+    private function generateClassPropertyAttributes(Node\Stmt\Property $node): ?Node\Stmt\Property
     {
+        if ($this->currentClass?->isAnonymous()) {
+            // 匿名类不处理
+            return null;
+        }
         $property = $this->reflection->getProperty((string) $node->props[0]->name);
         $annotations = $this->reader->getPropertyAnnotations($property);
         $comments = Helper::arrayValueLast($node->getComments())?->getText();
@@ -111,9 +133,6 @@ class RewriteVisitor extends NodeVisitorAbstract
             if (!$annotation instanceof ImiAnnotationBase) {
                 continue;
             }
-//            todo if (! in_array($annotation::class, $this->annotations, true)) {
-//                continue;
-//            }
             /** @var Node\Identifier|Node\Name $type */
             [$type, $fromComment] = $this->guessClassPropertyType($node, $property);
             if ($type) {
@@ -157,14 +176,15 @@ class RewriteVisitor extends NodeVisitorAbstract
      */
     protected function generateAttributeAndSaveComments(Node $node, array $annotations): Node\Stmt\Class_|Node\Stmt\ClassMethod
     {
+        if ($node instanceof Node\Stmt\Class_ && $node->isAnonymous()) {
+            // 匿名类不处理
+            return $node;
+        }
         $comments = Helper::arrayValueLast($node->getComments())?->getText();
         foreach ($annotations as $annotation) {
             if (!$annotation instanceof ImiAnnotationBase) {
                 continue;
             }
-//           todo if (! in_array($annotation::class, $this->annotations, true)) {
-//                continue;
-//            }
 
             if ($this->isNestedAnnotation($annotation)) {
                 // todo 完全弃用
