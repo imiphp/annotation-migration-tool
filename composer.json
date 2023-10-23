@@ -17,7 +17,7 @@
         "symfony/finder": "^5.4|^6.0",
         "symfony/console": "^5.4|^6.0",
         "psr/log": "~2.0|~3.0",
-        "yurunsoft/doctrine-annotations": "dev-v2-doc-pos as 1.999.x-dev"
+        "yurunsoft/doctrine-annotations": "dev-yurun as 1.999.x-dev"
     },
     "require-dev": {
         "imiphp/imi": "3.0.x-dev"
@@ -27,11 +27,5 @@
     ],
     "config": {
         "sort-packages": true
-    },
-    "repositories": [
-        {
-            "type": "git",
-            "url": "https://github.com/NHZEX/doctrine-annotations.git"
-        }
-    ]
+    }
 }

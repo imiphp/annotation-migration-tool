@@ -48,7 +48,12 @@ class RewriteVisitor extends NodeVisitorAbstract
                 $this->namespace = $node;
                 break;
             case $node instanceof Node\Stmt\Class_:
-                $reflection = new \ReflectionClass($this->namespace->name . '\\' . $node->name);
+                $class = $this->namespace->name . '\\' . $node->name;
+                if (!\class_exists($class)) {
+                    $this->logger->warning("Class not exists: $class");
+                    return;
+                }
+                $reflection = new \ReflectionClass($class);
                 if ($reflection->isSubclassOf(ImiAnnotationBase::class)) {
                     return;
                 }

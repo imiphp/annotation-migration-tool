@@ -8,6 +8,8 @@ use Composer\InstalledVersions;
 use Imiphp\Tool\AnnotationMigration\Command\AnnotationMigrationCommand;
 use Symfony\Component\Console\Application;
 
+\error_reporting(E_ALL);
+
 (function () {
     if (!class_exists(AnnotationMigrationCommand::class))
     {
