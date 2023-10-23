@@ -52,7 +52,11 @@ class RewriteVisitor extends NodeVisitorAbstract
                     // 跳过匿名
                     return;
                 }
-                $class = $this->namespace->name . '\\' . $node->name;
+                if ($this->namespace) {
+                    $class = $this->namespace->name . '\\' . $node->name;
+                } else {
+                    $class = $node->name;
+                }
                 if (!\class_exists($class)) {
                     $this->logger->warning("Class not exists: $class");
                     return;

@@ -13,8 +13,9 @@ trait RewritePropertyHelperTrait
             return $type->toString();
         }
         return match (true) {
-            $type->isRelative(), $type->isQualified(), $type->isUnqualified() => $this->namespace->name->toString() . '\\'
-                . $type->toString(),
+            $type->isRelative(), $type->isQualified(), $type->isUnqualified() => $this->namespace
+                ? ($this->namespace->name->toString() . '\\' . $type->toString())
+                : $type->toString(),
             default => $type->toString(),
         };
     }
