@@ -22,6 +22,7 @@ class AnnotationMigrationCommand extends Command
     {
         $this
             ->addOption('dir', null, InputOption::VALUE_OPTIONAL|InputOption::VALUE_IS_ARRAY, '自定义扫描目录')
+            ->addOption('prop-type', null, InputOption::VALUE_NEGATABLE, '转换属性的注解类型为标准类型声明', true)
             ->addOption('dry-run', 'd', InputOption::VALUE_NONE, '尝试运行，不生成文件')
             ->setDescription('迁移注解为 PHP8 原生实现');
     }
@@ -29,6 +30,7 @@ class AnnotationMigrationCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $isDryRun = $input->getOption('dry-run');
+        $propType = $input->getOption('prop-type');
 
         $dirs = $input->getOption('dir');
 
@@ -47,7 +49,7 @@ class AnnotationMigrationCommand extends Command
 
         foreach ($finder as $item) {
             try {
-                $handle = $generator->generate($item->getRealPath());
+                $handle = $generator->generate(filename: $item->getRealPath(), rewritePropType: $propType);
             } catch (\Throwable $throwable) {
                 $output->writeln("Error\t{$item->getRealPath()}");
                 $output->writeln('> ' . $throwable);

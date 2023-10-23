@@ -32,7 +32,7 @@ class CodeRewriteGenerator
         ]);
     }
 
-    public function generate(string $filename)
+    public function generate(string $filename, bool $rewritePropType): HandleCode
     {
         $handle = new HandleCode(filename: $filename, reader: $this->reader);
 
@@ -43,6 +43,7 @@ class CodeRewriteGenerator
                 handleCode: $handle,
                 annotations: [],
                 logger: $this->logger,
+                rewritePropType: $rewritePropType,
             )
         );
         $modifiedStmts = $traverser->traverse($stmts);

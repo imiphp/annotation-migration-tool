@@ -37,6 +37,7 @@ class RewriteVisitor extends NodeVisitorAbstract
         readonly public HandleCode $handleCode,
         readonly public array $annotations = [],
         readonly public LoggerInterface $logger = new NullLogger(),
+        readonly protected bool $rewritePropType = true,
     )
     {
         $this->reader = $this->handleCode->reader;
@@ -133,28 +134,30 @@ class RewriteVisitor extends NodeVisitorAbstract
             if (!$annotation instanceof ImiAnnotationBase) {
                 continue;
             }
-            /** @var Node\Identifier|Node\Name $type */
-            [$type, $fromComment] = $this->guessClassPropertyType($node, $property);
-            if ($type) {
-                // todo ?类声明未接口，注入未声明，注解类型为实现类
-//              // todo 不确定场景
-//                if (
-//                    $comment                                                    // type is from comment like @var
-//                    && ($parentClass = $this->reflection->getParentClass())     // is subclass
-//                    && $parentClass->hasProperty($property->name)               // parentClass have same property
-//                    && ! $parentClass->getProperty($property->name)->hasType()   // parentClass property not have type, subclass same on
-//                ) {
-//                    if ($annotation instanceof Inject) {
-//                        if (empty($annotation->name)) {
-//                            $args = ['value' => $this->getInjectPropertyType($type)];
-//                        }
-//                    }
-//                } else {
-//                    $node->type = $type;
-//                }
-                if ($fromComment) {
-                    $node->type = $type;
-                    $comments = $this->removeAnnotationFromComments($comments, 'var');
+            if ($this->rewritePropType) {
+                /** @var Node\Identifier|Node\Name $type */
+                [$type, $fromComment] = $this->guessClassPropertyType($node, $property);
+                if ($type) {
+                    // todo ?类声明未接口，注入未声明，注解类型为实现类
+                    //              // todo 不确定场景
+                    //                if (
+                    //                    $comment                                                    // type is from comment like @var
+                    //                    && ($parentClass = $this->reflection->getParentClass())     // is subclass
+                    //                    && $parentClass->hasProperty($property->name)               // parentClass have same property
+                    //                    && ! $parentClass->getProperty($property->name)->hasType()   // parentClass property not have type, subclass same on
+                    //                ) {
+                    //                    if ($annotation instanceof Inject) {
+                    //                        if (empty($annotation->name)) {
+                    //                            $args = ['value' => $this->getInjectPropertyType($type)];
+                    //                        }
+                    //                    }
+                    //                } else {
+                    //                    $node->type = $type;
+                    //                }
+                    if ($fromComment) {
+                        $node->type = $type;
+                        $comments = $this->removeAnnotationFromComments($comments, 'var');
+                    }
                 }
             }
             $node->attrGroups[] = new Node\AttributeGroup([
