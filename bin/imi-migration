@@ -40,7 +40,15 @@ use Symfony\Component\Console\Application;
         })();
     }
 
-    echo "cwd: " . \getcwd() . PHP_EOL;
+    \define('MIGRATION_PROJECT_ROOT_DIR', \getcwd());
+
+    echo "cwd: " . MIGRATION_PROJECT_ROOT_DIR . PHP_EOL;
+
+    $bootstrapFile = MIGRATION_PROJECT_ROOT_DIR . '/migration-cfg.php';
+    if (\is_file($bootstrapFile)) {
+        echo 'load: migration-cfg.php' . PHP_EOL;
+        require $bootstrapFile;
+    }
 
     $app = new Application('imi phar tool', InstalledVersions::getPrettyVersion('imiphp/annotation-migration') ?: 'dev');
     $command = new AnnotationMigrationCommand();
