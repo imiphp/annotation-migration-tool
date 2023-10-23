@@ -21,7 +21,12 @@ trait RewritePropertyHelperTrait
 
     protected function guessName(string $name): Node\Name
     {
-        return str_contains($name, '\\') ? new Node\Name\FullyQualified($name) : new Node\Name($name);
+        if (str_contains($name, '\\')) {
+            $name = \ltrim($name, '\\');
+            return new Node\Name\FullyQualified($name);
+        } else {
+            return new Node\Name($name);
+        }
     }
 
     protected function guessClassPropertyType(Node\Stmt\Property $node, \ReflectionProperty $property): array
