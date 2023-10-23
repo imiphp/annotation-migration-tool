@@ -23,8 +23,8 @@ class RewriteVisitor extends NodeVisitorAbstract
 
     protected Reader $reader;
 
-    protected BuilderFactory $factory;
-    protected ?\ReflectionClass $reflection = null;
+    protected BuilderFactory    $factory;
+    protected ?\ReflectionClass $topClassReflection = null;
 
     protected ?Node\Stmt\Namespace_ $namespace = null;
 
@@ -69,7 +69,7 @@ class RewriteVisitor extends NodeVisitorAbstract
                     return;
                 }
                 // 设置顶级类
-                $this->reflection = $reflection;
+                $this->topClassReflection = $reflection;
                 break;
             case $node instanceof Node\Stmt\Use_:
                 foreach ($node->uses as $use) {
@@ -87,7 +87,7 @@ class RewriteVisitor extends NodeVisitorAbstract
             }
             $this->currentClass = null;
         }
-        if (null === $this->reflection) {
+        if (null === $this->topClassReflection) {
             return null;
         }
 
@@ -105,7 +105,7 @@ class RewriteVisitor extends NodeVisitorAbstract
             // 匿名类不处理
             return null;
         }
-        $annotations = $this->reader->getClassAnnotations($this->reflection);
+        $annotations = $this->reader->getClassAnnotations($this->topClassReflection);
         return $this->generateAttributeAndSaveComments($node, $annotations);
     }
 
@@ -115,7 +115,7 @@ class RewriteVisitor extends NodeVisitorAbstract
             // 匿名类不处理
             return null;
         }
-        $method = $this->reflection->getMethod((string) $node->name);
+        $method = $this->topClassReflection->getMethod((string) $node->name);
         return $this->generateAttributeAndSaveComments($node, $this->reader->getMethodAnnotations($method));
     }
 
@@ -125,7 +125,7 @@ class RewriteVisitor extends NodeVisitorAbstract
             // 匿名类不处理
             return null;
         }
-        $property = $this->reflection->getProperty((string) $node->props[0]->name);
+        $property = $this->topClassReflection->getProperty((string) $node->props[0]->name);
         $annotations = $this->reader->getPropertyAnnotations($property);
         $comments = Helper::arrayValueLast($node->getComments())?->getText();
         /** @var ImiAnnotationBase[] $annotations */
