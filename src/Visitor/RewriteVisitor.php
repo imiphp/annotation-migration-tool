@@ -48,6 +48,10 @@ class RewriteVisitor extends NodeVisitorAbstract
                 $this->namespace = $node;
                 break;
             case $node instanceof Node\Stmt\Class_:
+                if ($node->isAnonymous()) {
+                    // 跳过匿名
+                    return;
+                }
                 $class = $this->namespace->name . '\\' . $node->name;
                 if (!\class_exists($class)) {
                     $this->logger->warning("Class not exists: $class");
