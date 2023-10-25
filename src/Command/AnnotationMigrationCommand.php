@@ -24,6 +24,7 @@ class AnnotationMigrationCommand extends Command
         $this
             ->addOption('dir', null, InputOption::VALUE_OPTIONAL|InputOption::VALUE_IS_ARRAY, '自定义扫描目录', ['src'])
             ->addOption('dry-run', 'd', InputOption::VALUE_NONE, '尝试运行，不生成文件')
+            ->addOption('error-continue', null, InputOption::VALUE_NEGATABLE, '遇到错误时继续')
             ->setDescription('迁移注解为 PHP8 原生实现');
     }
 
@@ -50,6 +51,7 @@ class AnnotationMigrationCommand extends Command
         }
 
         $isDryRun = $input->getOption('dry-run');
+        $isErrorContinue = $input->getOption('error-continue');
 
         $dirs = $input->getOption('dir');
 
@@ -66,14 +68,21 @@ class AnnotationMigrationCommand extends Command
 
         $generator = new CodeRewriteGenerator($logger, $output->isDebug());
 
+        $isError = false;
         foreach ($finder as $item) {
             try {
                 $handle = $generator->generate(filename: $item->getRealPath());
             } catch (\Throwable $throwable) {
+                $isError = true;
+
                 $output->writeln("Error\t{$item->getRealPath()}");
                 $output->writeln('> ' . $throwable);
                 $output->writeln('> ' . $throwable->getTraceAsString());
-                continue;
+                if ($isErrorContinue) {
+                    continue;
+                } else {
+                    break;
+                }
             }
 
             if ($handle->isModified()) {
@@ -86,6 +95,6 @@ class AnnotationMigrationCommand extends Command
             }
         }
 
-        return 0;
+        return $isError ? 1 : 0;
     }
 }
