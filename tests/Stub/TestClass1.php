@@ -2,19 +2,22 @@
 
 namespace Imiphp\Tests\Stub;
 
-use Imi\Bean\Annotation\Listener;
-use Imi\Util\ImiPriority;
-use Imi\Server\Http\Message\Contract\IHttpResponse;
-use Imi\Server\Http\Route\Annotation\Action;
-use Imi\Bean\Annotation\Bean;
 use Imi\Aop\Annotation\Inject;
+use Imi\Bean\Annotation\Bean;
+use Imi\Bean\Annotation\Listener;
 use Imi\Cache\Annotation\Cacheable;
 use Imi\Cron\Contract\ICronManager;
+use Imi\Facade\Annotation\Facade;
 use Imi\Lock\Annotation\Lockable;
+use Imi\Server\Http\Message\Contract\IHttpResponse;
 use Imi\Server\Http\Message\Emitter\SseEmitter;
-use Imi\Server\Http\Message\Emitter\SseMessageEvent;
+use Imi\Server\Http\Route\Annotation\Action;
+use Imi\Server\WebSocket\Route\Annotation\WSConfig;
+use Imi\Util\ImiPriority;
 
 /**
+ * @Facade(class="Yurun\Swoole\CoPool\ChannelContainer", request=false, args={})
+ * @Facade(class=WSConfig::class, request=false, args={})
  * @Bean(name="hotUpdate", env="cli")
  * @Listener(eventName="IMI.APP_RUN", priority=ImiPriority::IMI_MAX, one=true)
  */
@@ -71,6 +74,7 @@ class TestClass1
      * SSE.
      *
      * @Action
+     * @WSConfig(parserClass=\Imi\Server\DataParser\JsonObjectParser::class)
      */
     public function sse(): void
     {

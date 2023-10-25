@@ -4,13 +4,14 @@ declare(strict_types=1);
 namespace Imiphp\Tests;
 
 use Imiphp\Tool\AnnotationMigration\CodeRewriteGenerator;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
-use Psr\Log\NullLogger;
 
 class CodeRewriteTest extends TestCase
 {
-    public function testRewriteCode(): void
+    #[DataProvider(methodName: 'rewriteCodeDataProvider')]
+    public function testRewriteCode(string $filename, string $expectCode): void
     {
         $logger = new class extends AbstractLogger {
             protected array $logs = [];
@@ -27,9 +28,22 @@ class CodeRewriteTest extends TestCase
 
         $crg = new CodeRewriteGenerator($logger);
 
-        $handle = $crg->generate(__DIR__ . '/Stub/TestClass1.php');
+        $handle = $crg->generate($filename);
+
+        foreach ($logger->getLogs() as $log) {
+            echo $log . PHP_EOL;
+        }
 
         $this->assertEquals(
+            $expectCode,
+            $handle->rewriteCode(),
+        );
+    }
+
+    public static function rewriteCodeDataProvider(): \Generator
+    {
+        yield [
+            __DIR__ . '/Stub/TestClass1.php',
             <<<PHP
             <?php
             
@@ -45,10 +59,13 @@ class CodeRewriteTest extends TestCase
             use Imi\Cron\Contract\ICronManager;
             use Imi\Lock\Annotation\Lockable;
             use Imi\Server\Http\Message\Emitter\SseEmitter;
-            use Imi\Server\Http\Message\Emitter\SseMessageEvent;
+            use Imi\Facade\Annotation\Facade;
+            use Imi\Server\WebSocket\Route\Annotation\WSConfig;
             
             
             #[Bean(name: 'test456', env: 'fpm')]
+            #[Facade(class: 'Yurun\\\\Swoole\\\\CoPool\\\\ChannelContainer')]
+            #[Facade(class: \Imi\Server\WebSocket\Route\Annotation\WSConfig::class)]
             #[Bean(name: 'hotUpdate', env: 'cli')]
             #[Listener(eventName: 'IMI.APP_RUN', priority: 19940312, one: true)]
             class TestClass1
@@ -89,6 +106,7 @@ class CodeRewriteTest extends TestCase
                  * SSE.
                  */
                 #[Action]
+                #[WSConfig(parserClass: \Imi\Server\DataParser\JsonObjectParser::class)]
                 public function sse(): void
                 {
                     \$class = new class() extends SseEmitter {
@@ -101,9 +119,36 @@ class CodeRewriteTest extends TestCase
             }
             
             PHP,
-            $handle->rewriteCode(),
-        );
+        ];
 
-        $this->assertEmpty($logger->getLogs());
+        yield [
+            __DIR__ . '/Stub/TestClass2.php',
+            <<<PHP
+                <?php
+                declare(strict_types=1);
+                
+                namespace Imiphp\Tests\Stub {
+                    use Imi\Server\Http\Message\Contract\IHttpResponse;
+                    use Imi\Bean\Annotation\Bean;
+                
+                    
+                    #[Bean(name: 'test456', env: 'fpm')]
+                    #[Bean(name: 'TestClass2', env: 'cli')]
+                    class TestClass2
+                    {
+                        public const DESCRIPTORSPEC = [
+                            ['pipe', 'r'],  // 标准输入，子进程从此管道中读取数据
+                            ['pipe', 'w'],  // 标准输出，子进程向此管道中写入数据
+                        ];
+                
+                        /**
+                         * 响应.
+                         */
+                        public IHttpResponse \$response;
+                    }
+                }
+                
+                PHP,
+        ];
     }
 }

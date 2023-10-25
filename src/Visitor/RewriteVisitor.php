@@ -253,17 +253,28 @@ class RewriteVisitor extends NodeVisitorAbstract
     protected function buildAttributeArgs(ImiAnnotationBase $annotation, array $args = []): array
     {
         $args = \array_merge($args, $this->getNotDefaultPropertyFromAnnotation($annotation));
-        $args = \array_map(function ($arg) use (&$isNested) {
+        $newArgs = [];
+        foreach ($args as $key => $arg) {
             if ($arg instanceof ConfigValue) {
                 $this->logger->warning("ConfigValue is not supported in attribute, Name: {$arg->name}");
-                return $arg->default;
+                $newArgs[$key] = $arg->default;
             } elseif (\is_object($arg)) {
-                return $this->buildAttributeToNewObject($arg);
+                $newArgs[$key] = $this->buildAttributeToNewObject($arg);
+            } elseif (
+                \str_contains(\strtolower($key), 'class')
+                && \is_string($arg)
+                && \preg_match('/^\S+$/', $arg) > 0
+                && \class_exists($arg)
+            ) {
+                $newArgs[$key] = $this->factory->classConstFetch(
+                    $this->guessName($arg),
+                    new Node\Identifier('class')
+                );
             } else {
-                return $this->factory->val($arg);
+                $newArgs[$key] = $this->factory->val($arg);
             }
-        }, $args);
-        return $this->factory->args($args);
+        }
+        return $this->factory->args($newArgs);
     }
 
     protected function buildAttributeToNewObject(ImiAnnotationBase $annotation)
