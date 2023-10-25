@@ -20,7 +20,9 @@
         "yurunsoft/doctrine-annotations": "dev-yurun as 1.999.x-dev"
     },
     "require-dev": {
-        "imiphp/imi": "3.0.x-dev"
+        "imiphp/imi": "3.0.x-dev",
+        "phpunit/phpunit": "^10.4",
+        "symfony/var-dumper": "^6.3"
     },
     "bin": [
         "bin/imi-migration"

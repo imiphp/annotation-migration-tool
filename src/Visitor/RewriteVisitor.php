@@ -6,9 +6,10 @@ namespace Imiphp\Tool\AnnotationMigration\Visitor;
 use Imi\Aop\Annotation\Inject;
 use Imi\Bean\Annotation\Base as ImiAnnotationBase;
 use Imi\Config\Annotation\ConfigValue;
+use Imiphp\Tool\AnnotationMigration\CodeRewriteGenerator;
 use Imiphp\Tool\AnnotationMigration\HandleCode;
 use Imiphp\Tool\AnnotationMigration\Helper;
-use PhpParser\Comment\Doc;
+use Imiphp\Tool\AnnotationMigration\Rewrite\CommentRewriteItem;
 use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
 use PhpParser\BuilderFactory;
@@ -34,10 +35,10 @@ class RewriteVisitor extends NodeVisitorAbstract
     protected ?Node\Stmt\Class_ $currentClass = null;
 
     public function __construct(
+        readonly protected CodeRewriteGenerator $generator,
         readonly public HandleCode $handleCode,
         readonly public array $annotations = [],
         readonly public LoggerInterface $logger = new NullLogger(),
-        readonly protected bool $rewritePropType = true,
     )
     {
         $this->reader = $this->handleCode->reader;
@@ -128,39 +129,15 @@ class RewriteVisitor extends NodeVisitorAbstract
         }
         $property = $this->topClassReflection->getProperty((string) $node->props[0]->name);
         $annotations = $this->reader->getPropertyAnnotations($property);
-        $comments = Helper::arrayValueLast($node->getComments())?->getText();
+        $attrGroups = [];
+        $commentDoc = Helper::arrayValueLast($node->getComments());
+        $comments = $commentDoc?->getText();
         /** @var ImiAnnotationBase[] $annotations */
         foreach ($annotations as $annotation) {
             if (!$annotation instanceof ImiAnnotationBase) {
                 continue;
             }
-            if ($this->rewritePropType) {
-                /** @var Node\Identifier|Node\Name $type */
-                [$type, $fromComment] = $this->guessClassPropertyType($node, $property);
-                if ($type) {
-                    // todo ?类声明未接口，注入未声明，注解类型为实现类
-                    //              // todo 不确定场景
-                    //                if (
-                    //                    $comment                                                    // type is from comment like @var
-                    //                    && ($parentClass = $this->reflection->getParentClass())     // is subclass
-                    //                    && $parentClass->hasProperty($property->name)               // parentClass have same property
-                    //                    && ! $parentClass->getProperty($property->name)->hasType()   // parentClass property not have type, subclass same on
-                    //                ) {
-                    //                    if ($annotation instanceof Inject) {
-                    //                        if (empty($annotation->name)) {
-                    //                            $args = ['value' => $this->getInjectPropertyType($type)];
-                    //                        }
-                    //                    }
-                    //                } else {
-                    //                    $node->type = $type;
-                    //                }
-                    if ($fromComment) {
-                        $node->type = $type;
-                        $comments = $this->removeAnnotationFromComments($comments, 'var');
-                    }
-                }
-            }
-            $node->attrGroups[] = new Node\AttributeGroup([
+            $attrGroups[] = new Node\AttributeGroup([
                 new Node\Attribute(
                     $this->guessName($this->getClassName($annotation)),
                     $this->buildAttributeArgs($annotation, $args ?? []),
@@ -169,7 +146,17 @@ class RewriteVisitor extends NodeVisitorAbstract
             $comments = $this->removeAnnotationFromCommentsEx($comments, $annotation);
             $this->handleCode->setModified();
         }
-        $node->setDocComment(new Doc((string) $comments));
+
+        $attribute = $this->generator->getPrinter()->prettyPrint($attrGroups);
+        if ($attrGroups) {
+            $this->handleCode->pushCommentRewriteQueue(new CommentRewriteItem(
+                kind: $node::class,
+                node: $node->props[0],
+                rawDoc: $commentDoc,
+                newComment: (string) $comments,
+                newAttribute: $attribute,
+            ), $node instanceof Node\Stmt\Class_);
+        }
         return $node;
     }
 
@@ -183,7 +170,9 @@ class RewriteVisitor extends NodeVisitorAbstract
             // 匿名类不处理
             return $node;
         }
-        $comments = Helper::arrayValueLast($node->getComments())?->getText();
+        $attrGroups = [];
+        $commentDoc = Helper::arrayValueLast($node->getComments());
+        $comments = $commentDoc?->getText();
         foreach ($annotations as $annotation) {
             if (!$annotation instanceof ImiAnnotationBase) {
                 continue;
@@ -197,7 +186,7 @@ class RewriteVisitor extends NodeVisitorAbstract
                         $className = $this->getClassName($value);
                         $name = str_contains($className, '\\') ? new Node\Name\FullyQualified($className)
                             : new Node\Name($this->getClassName($value));
-                        $node->attrGroups[] = new Node\AttributeGroup([
+                        $attrGroups[] = new Node\AttributeGroup([
                             new Node\Attribute(
                                 $name,
                                 $this->buildAttributeArgs($value),
@@ -209,7 +198,7 @@ class RewriteVisitor extends NodeVisitorAbstract
             } else {
                 $className = $this->getClassName($annotation);
                 $name = str_contains($className, '\\') ? new Node\Name\FullyQualified($className) : new Node\Name($this->getClassName($annotation));
-                $node->attrGroups[] = new Node\AttributeGroup([
+                $attrGroups[] = new Node\AttributeGroup([
                     new Node\Attribute(
                         $name,
                         $this->buildAttributeArgs($annotation),
@@ -219,7 +208,19 @@ class RewriteVisitor extends NodeVisitorAbstract
             }
             $this->handleCode->setModified();
         }
-        $node->setDocComment(new Doc((string) $comments));
+
+        $attribute = $this->generator->getPrinter()->prettyPrint($attrGroups);
+
+        if ($attrGroups) {
+            $this->handleCode->pushCommentRewriteQueue(new CommentRewriteItem(
+                kind: $node::class,
+                node: $node->name,
+                rawDoc: $commentDoc,
+                newComment: (string) $comments,
+                newAttribute: $attribute,
+            ), $node instanceof Node\Stmt\Class_);
+        }
+
         return $node;
     }
 
