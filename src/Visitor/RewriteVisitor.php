@@ -33,6 +33,8 @@ class RewriteVisitor extends NodeVisitorAbstract
 
     protected ?Node\Stmt\Class_ $currentClass = null;
 
+    protected bool $isAbort = false;
+
     public function __construct(
         readonly protected CodeRewriteGenerator $generator,
         readonly public HandleCode $handleCode,
@@ -44,16 +46,39 @@ class RewriteVisitor extends NodeVisitorAbstract
         $this->factory = new BuilderFactory();
     }
 
+    protected function abort(): void
+    {
+        $this->isAbort = true;
+        // 目前方案保留已经成功处理的更改
+        // $this->handleCode->setModified(false);
+        // $this->handleCode->clearRewriteQueue();
+    }
+
     public function enterNode(Node $node)
     {
+        if ($this->isAbort) {
+            return;
+        }
+
         switch (true) {
             case $node instanceof Node\Stmt\Namespace_:
+                if (null !== $this->namespace && $node->name !== $this->namespace->name) {
+                    // 不支持多个类声明
+                    $this->logger->warning('Multiple namespace not supported');
+                    $this->abort();
+                    return;
+                }
                 $this->namespace = $node;
                 break;
             case $node instanceof Node\Stmt\Class_:
                 $this->currentClass = $node;
                 if ($node->isAnonymous()) {
                     // 跳过匿名
+                    return;
+                } elseif (null !== $this->topClassReflection) {
+                    // 不支持多个类声明
+                    $this->logger->warning('Multiple class not supported');
+                    $this->abort();
                     return;
                 }
                 if ($this->namespace) {
@@ -82,6 +107,9 @@ class RewriteVisitor extends NodeVisitorAbstract
 
     public function leaveNode(Node $node): ?Node
     {
+        if ($this->isAbort) {
+            return null;
+        }
         if ($node instanceof Node\Stmt\Class_) {
             if (null !== $this->currentClass && \spl_object_id($this->currentClass) !== \spl_object_id($node)) {
                 throw new \RuntimeException('Class node not match');
