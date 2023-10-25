@@ -28,9 +28,9 @@ class HandleCode
         return $this->modified;
     }
 
-    public function setModified(): void
+    public function setModified(bool $modified = true): void
     {
-        $this->modified = true;
+        $this->modified = $modified;
     }
 
     public function getContents(): string
@@ -55,6 +55,11 @@ class HandleCode
     public function getCommentRewriteQueue(): array
     {
         return $this->commentRewriteQueue;
+    }
+
+    public function clearRewriteQueue(): void
+    {
+        $this->commentRewriteQueue = [];
     }
 
     public function pushCommentRewriteQueue(Rewrite\CommentRewriteItem $param, bool $unshift): void
@@ -88,14 +93,23 @@ class HandleCode
 
             }
 
-            if (Node\Stmt\Class_::class === $item->kind && $item->newAttribute) {
+            if (Node\Stmt\Class_::class === $item->kind) {
                 // 忽略处理 class 与行开头之间的可能存在空的情况
-                $classKindPos = strrpos(\substr($contents, 0, $kindNameStartPos + 1), 'class');
+                $testContent = \substr($contents, 0, $kindNameStartPos + 1);
+                if (false === \preg_match_all('#\n(\s*)(final|abstract|trait|class)#i', $testContent, $matches, \PREG_OFFSET_CAPTURE|\PREG_UNMATCHED_AS_NULL)) {
+                    continue;
+                }
+                // 获取行空格对齐
+                [$matchAllSet, $commentPadSet] = $matches;
+                $targetItem = $matchAllSet[\array_key_last($matchAllSet)];
+                $classKindPos = $targetItem[1] ?? false;
 
-                if (false !== $classKindPos) {
-                    $contents = \substr($contents, 0, $classKindPos)
+                $commentPadLen = \strlen($commentPadSet[\array_key_last($commentPadSet)][0]);
+
+                if ($item->newAttribute && \is_numeric($classKindPos)) {
+                    $contents = \substr($contents, 0, $classKindPos + 1)
                         . self::linePadding($item->newAttribute, $commentPadLen). "\n"
-                        . \substr($contents, $classKindPos);
+                        . \substr($contents, $classKindPos + 1);
                 }
             } elseif (Node\Stmt\ClassMethod::class === $item->kind) {
 
