@@ -67,12 +67,6 @@ class CodeRewriteGenerator
 
         $handle->setPrintClosure(fn () => $this->printer->prettyPrintFile($modifiedStmts));
 
-        if ($handle->isModified()) {
-            $code = $this->printer->prettyPrintFile($modifiedStmts);
-
-            $handle->setRewriteCode($code);
-        }
-
         return $handle;
     }
 }

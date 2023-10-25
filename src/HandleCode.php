@@ -10,7 +10,6 @@ use Yurun\Doctrine\Common\Annotations\Reader;
 class HandleCode
 {
     protected bool $modified = false;
-    private ?string $rewriteCode = null;
 
     private ?\Closure $printClosure = null;
     /**
@@ -39,22 +38,12 @@ class HandleCode
         return file_get_contents($this->filename);
     }
 
-    public function setRewriteCode(string $code): void
-    {
-        $this->rewriteCode = $code;
-    }
-
-    public function getRewriteCode(): ?string
-    {
-        return $this->rewriteCode;
-    }
-
     public function setPrintClosure(?\Closure $printClosure): void
     {
         $this->printClosure = $printClosure;
     }
 
-    public function printStmt(): ?string
+    public function execPrintStmt(): ?string
     {
         if (null === $this->printClosure) {
             return null;
