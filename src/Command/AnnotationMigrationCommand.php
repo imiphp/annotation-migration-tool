@@ -10,6 +10,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Finder\Finder;
+use Yurun\Doctrine\Common\Annotations\AnnotationReader;
 
 class AnnotationMigrationCommand extends Command
 {
@@ -28,6 +29,26 @@ class AnnotationMigrationCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        if (\defined('MIGRATION_PROJECT_PARAMS') && !empty(MIGRATION_PROJECT_PARAMS)) {
+            $config = MIGRATION_PROJECT_PARAMS;
+
+            if (\is_array($config['globalIgnoredName'] ?? null)) {
+                foreach ($config['globalIgnoredName'] as $name) {
+                    AnnotationReader::addGlobalIgnoredName($name);
+                }
+            }
+            if (\is_array($config['globalIgnoredNamespace'] ?? null)) {
+                foreach ($config['globalIgnoredNamespace'] as $namespace) {
+                    AnnotationReader::addGlobalIgnoredNamespace($namespace);
+                }
+            }
+            if (\is_array($config['globalImports'] ?? null)) {
+                foreach ($config['globalImports'] as $name => $class) {
+                    AnnotationReader::addGlobalImports($name, $class);
+                }
+            }
+        }
+
         $isDryRun = $input->getOption('dry-run');
 
         $dirs = $input->getOption('dir');
