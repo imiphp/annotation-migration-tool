@@ -64,7 +64,7 @@ class AnnotationMigrationCommand extends Command
 
         $logger = new ConsoleLogger($output);
 
-        $generator = new CodeRewriteGenerator($logger);
+        $generator = new CodeRewriteGenerator($logger, $output->isDebug());
 
         foreach ($finder as $item) {
             try {

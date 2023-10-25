@@ -19,7 +19,8 @@ class CodeRewriteGenerator
     protected Standard         $printer;
 
     public function __construct(
-        readonly public LoggerInterface $logger
+        readonly public LoggerInterface $logger,
+        readonly public bool $debug,
     )
     {
         AnnotationReader::addGlobalIgnoredName('noRector');
@@ -61,6 +62,7 @@ class CodeRewriteGenerator
                 handleCode: $handle,
                 annotations: [],
                 logger: $this->logger,
+                debug: $this->debug,
             )
         );
         $modifiedStmts = $traverser->traverse($stmts);

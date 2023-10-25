@@ -40,6 +40,7 @@ class RewriteVisitor extends NodeVisitorAbstract
         readonly public HandleCode $handleCode,
         readonly public array $annotations = [],
         readonly public LoggerInterface $logger = new NullLogger(),
+        readonly public bool $debug = false,
     )
     {
         $this->reader = $this->handleCode->reader;
@@ -69,6 +70,9 @@ class RewriteVisitor extends NodeVisitorAbstract
                     return;
                 }
                 $this->namespace = $node;
+                if ($this->debug) {
+                    $this->logger->debug("> Namespace: {$node?->name}");
+                }
                 break;
             case $node instanceof Node\Stmt\Class_:
                 $this->currentClass = $node;
@@ -89,6 +93,9 @@ class RewriteVisitor extends NodeVisitorAbstract
                 if (!\class_exists($class)) {
                     $this->logger->warning("Class not exists: $class");
                     return;
+                }
+                if ($this->debug) {
+                    $this->logger->debug("> Class: $class");
                 }
                 $reflection = new \ReflectionClass($class);
                 if ($reflection->isSubclassOf(ImiAnnotationBase::class)) {
@@ -154,7 +161,9 @@ class RewriteVisitor extends NodeVisitorAbstract
             // 匿名类不处理
             return null;
         }
-        $property = $this->topClassReflection->getProperty((string) $node->props[0]->name);
+        $propName =  (string) $node->props[0]->name;
+        $this->logger->debug("> Property: {$this->currentClass->name}::{$propName}");
+        $property = $this->topClassReflection->getProperty($propName);
         $annotations = $this->reader->getPropertyAnnotations($property);
         $attrGroups = [];
         $commentDoc = Helper::arrayValueLast($node->getComments());
@@ -196,6 +205,13 @@ class RewriteVisitor extends NodeVisitorAbstract
         if ($node instanceof Node\Stmt\Class_ && $node->isAnonymous()) {
             // 匿名类不处理
             return $node;
+        }
+        if ($node instanceof Node\Stmt\ClassMethod && $node->isMagic()) {
+            // 魔术方法不处理
+            return $node;
+        }
+        if ($this->debug && $node instanceof Node\Stmt\ClassMethod) {
+            $this->logger->debug("> Method: {$this->currentClass->name}::{$node->name}");
         }
         $attrGroups = [];
         $commentDoc = Helper::arrayValueLast($node->getComments());
