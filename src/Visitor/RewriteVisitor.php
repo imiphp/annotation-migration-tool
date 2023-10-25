@@ -3,16 +3,15 @@ declare(strict_types=1);
 
 namespace Imiphp\Tool\AnnotationMigration\Visitor;
 
-use Imi\Aop\Annotation\Inject;
 use Imi\Bean\Annotation\Base as ImiAnnotationBase;
 use Imi\Config\Annotation\ConfigValue;
 use Imiphp\Tool\AnnotationMigration\CodeRewriteGenerator;
 use Imiphp\Tool\AnnotationMigration\HandleCode;
 use Imiphp\Tool\AnnotationMigration\Helper;
 use Imiphp\Tool\AnnotationMigration\Rewrite\CommentRewriteItem;
+use PhpParser\BuilderFactory;
 use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
-use PhpParser\BuilderFactory;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Yurun\Doctrine\Common\Annotations\Reader;
@@ -147,8 +146,8 @@ class RewriteVisitor extends NodeVisitorAbstract
             $this->handleCode->setModified();
         }
 
-        $attribute = $this->generator->getPrinter()->prettyPrint($attrGroups);
-        if ($attrGroups) {
+        if ($this->handleCode->isModified()) {
+            $attribute = $attrGroups ? $this->generator->getPrinter()->prettyPrint($attrGroups) : '';
             $this->handleCode->pushCommentRewriteQueue(new CommentRewriteItem(
                 kind: $node::class,
                 node: $node->props[0],
@@ -209,9 +208,8 @@ class RewriteVisitor extends NodeVisitorAbstract
             $this->handleCode->setModified();
         }
 
-        $attribute = $this->generator->getPrinter()->prettyPrint($attrGroups);
-
-        if ($attrGroups) {
+        if ($this->handleCode->isModified()) {
+            $attribute = $attrGroups ? $this->generator->getPrinter()->prettyPrint($attrGroups) : '';
             $this->handleCode->pushCommentRewriteQueue(new CommentRewriteItem(
                 kind: $node::class,
                 node: $node->name,
