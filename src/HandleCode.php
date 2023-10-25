@@ -88,11 +88,6 @@ class HandleCode
             $commentPadLen = 0;
             $kindNameStartPos = $item->node->getStartFilePos();
 
-
-            if ($item->newAttribute) {
-
-            }
-
             if (Node\Stmt\Class_::class === $item->kind) {
                 // 忽略处理 class 与行开头之间的可能存在空的情况
                 $testContent = \substr($contents, 0, $kindNameStartPos + 1);
@@ -148,7 +143,7 @@ class HandleCode
                 }
             }
 
-            if ($item->newComment) {
+            if ($item->newComment && null !== $item->rawDoc) {
                 $contents = \substr($contents, 0, $item->rawDoc->getStartFilePos() )
                     . self::cleanComments($item->newComment, $commentPadLen)
                     . \substr($contents, $item->rawDoc->getEndFilePos() + 1);

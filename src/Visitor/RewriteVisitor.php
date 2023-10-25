@@ -71,7 +71,7 @@ class RewriteVisitor extends NodeVisitorAbstract
                 }
                 $this->namespace = $node;
                 if ($this->debug) {
-                    $this->logger->debug("> Namespace: {$node?->name}");
+                    $this->logger->debug("> Enter block namespace: {$node?->name}");
                 }
                 break;
             case $node instanceof Node\Stmt\Class_:
@@ -95,7 +95,7 @@ class RewriteVisitor extends NodeVisitorAbstract
                     return;
                 }
                 if ($this->debug) {
-                    $this->logger->debug("> Class: $class");
+                    $this->logger->debug("> Enter block class: $class");
                 }
                 $reflection = new \ReflectionClass($class);
                 if ($reflection->isSubclassOf(ImiAnnotationBase::class)) {
@@ -210,8 +210,12 @@ class RewriteVisitor extends NodeVisitorAbstract
             // 魔术方法不处理
             return $node;
         }
-        if ($this->debug && $node instanceof Node\Stmt\ClassMethod) {
-            $this->logger->debug("> Method: {$this->currentClass->name}::{$node->name}");
+        if ($this->debug) {
+            if ($node instanceof Node\Stmt\ClassMethod) {
+                $this->logger->debug("> Method: {$this->currentClass->name}::{$node->name}");
+            } else {
+                $this->logger->debug("> Class: {$node->name}");
+            }
         }
         $attrGroups = [];
         $commentDoc = Helper::arrayValueLast($node->getComments());
@@ -253,6 +257,9 @@ class RewriteVisitor extends NodeVisitorAbstract
         }
 
         if ($this->handleCode->isModified()) {
+            if (empty($attrGroups) && empty($commentDoc)) {
+                return $node;
+            }
             $attribute = $attrGroups ? $this->generator->getPrinter()->prettyPrint($attrGroups) : '';
             $this->handleCode->pushCommentRewriteQueue(new CommentRewriteItem(
                 kind: $node::class,
