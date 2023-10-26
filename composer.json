@@ -1,6 +1,8 @@
 {
     "name": "imiphp/annotation-migration",
     "type": "project",
+    "license": "MulanPSL-2.0",
+    "description": "工具：迁移 imi 注解为 PHP8 原生实现",
     "autoload": {
         "psr-4": {
             "Imiphp\\Tool\\AnnotationMigration\\": "src/"
