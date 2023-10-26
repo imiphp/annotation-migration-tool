@@ -25,11 +25,23 @@ class AnnotationMigrationCommand extends Command
             ->addOption('dir', null, InputOption::VALUE_OPTIONAL|InputOption::VALUE_IS_ARRAY, '自定义扫描目录', ['src'])
             ->addOption('dry-run', 'd', InputOption::VALUE_NONE, '尝试运行，不生成文件')
             ->addOption('error-continue', null, InputOption::VALUE_NEGATABLE, '遇到错误时继续')
+            ->addOption('init-config', null, InputOption::VALUE_NONE, '在当前目录生成配置文件')
             ->setDescription('迁移注解为 PHP8 原生实现');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $generateConfiguration = $input->getOption('init-config');
+
+        if ($generateConfiguration) {
+            if (\file_exists('./migration-cfg.php')) {
+                $output->writeln('Configuration file migration-project-params.php already exists');
+            }
+            \copy(__DIR__ . '/../../migration-cfg-example.php', './migration-cfg.php');
+            $output->writeln('Generate configuration file migration-cfg.php');
+            return 0;
+        }
+
         if (\defined('MIGRATION_PROJECT_PARAMS') && !empty(MIGRATION_PROJECT_PARAMS)) {
             $config = MIGRATION_PROJECT_PARAMS;
 
