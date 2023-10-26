@@ -227,34 +227,16 @@ class RewriteVisitor extends NodeVisitorAbstract
                 continue;
             }
 
-            if ($this->isNestedAnnotation($annotation)) {
-                // todo 完全弃用
-                foreach ((array) $annotation as $name => $values) {
-                    foreach ($values as $value) {
-                        /** @var ImiAnnotationBase $value */
-                        $className = $this->getClassName($value);
-                        $name = str_contains($className, '\\') ? new Node\Name\FullyQualified($className)
-                            : new Node\Name($this->getClassName($value));
-                        $attrGroups[] = new Node\AttributeGroup([
-                            new Node\Attribute(
-                                $name,
-                                $this->buildAttributeArgs($value),
-                            ),
-                        ]);
-                    }
-                    $comments = $this->removeNestedAnnotationFromComments($comments, $annotation);
-                }
-            } else {
-                $className = $this->getClassName($annotation);
-                $name = str_contains($className, '\\') ? new Node\Name\FullyQualified($className) : new Node\Name($this->getClassName($annotation));
-                $attrGroups[] = new Node\AttributeGroup([
-                    new Node\Attribute(
-                        $name,
-                        $this->buildAttributeArgs($annotation),
-                    ),
-                ]);
-                $comments = $this->removeAnnotationFromCommentsEx($comments, $annotation);
-            }
+            $className = $this->getClassName($annotation);
+            $name = str_contains($className, '\\') ? new Node\Name\FullyQualified($className) : new Node\Name($this->getClassName($annotation));
+            $attrGroups[] = new Node\AttributeGroup([
+                new Node\Attribute(
+                    $name,
+                    $this->buildAttributeArgs($annotation),
+                ),
+            ]);
+            $comments = $this->removeAnnotationFromCommentsEx($comments, $annotation);
+
             $this->handleCode->setModified();
         }
 
@@ -307,14 +289,6 @@ class RewriteVisitor extends NodeVisitorAbstract
         $className = $this->getClassName($annotation);
         $name = str_contains($className, '\\') ? new Node\Name\FullyQualified($className) : new Node\Name($this->getClassName($annotation));
         return $this->factory->new($name, $this->buildAttributeArgs($annotation));
-    }
-
-    protected function isNestedAnnotation(object $annotation): bool
-    {
-        return match ($annotation::class) {
-//            Middlewares::class => true,
-            default => false,
-        };
     }
 
     protected function getClassName($class): string
