@@ -17,7 +17,8 @@ jobs:
           - 8.2
         experimental: [false]
         include:
-          - php: 8.3
+          - os: ubuntu-latest
+            php: 8.3
             experimental: true
 
     steps:
