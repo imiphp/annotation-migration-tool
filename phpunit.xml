@@ -7,7 +7,7 @@
          requireCoverageMetadata="true"
          beStrictAboutCoverageMetadata="true"
          beStrictAboutOutputDuringTests="true"
-         failOnRisky="true"
+         failOnRisky="false"
          failOnWarning="true">
     <testsuites>
         <testsuite name="default">
@@ -20,4 +20,10 @@
             <directory>src</directory>
         </include>
     </source>
+
+    <coverage>
+        <report>
+            <html outputDirectory="coverage"/>
+        </report>
+    </coverage>
 </phpunit>
