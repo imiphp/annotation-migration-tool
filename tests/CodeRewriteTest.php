@@ -130,6 +130,7 @@ class CodeRewriteTest extends TestCase
                 namespace Imiphp\Tests\Stub {
 
                     use Imi\Bean\Annotation\Bean;
+                    use Imi\Config\Annotation\ConfigValue;
                     use Imi\Server\Http\Message\Contract\IHttpResponse;
                 
                     

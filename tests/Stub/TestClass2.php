@@ -4,10 +4,11 @@ declare(strict_types=1);
 namespace Imiphp\Tests\Stub {
 
     use Imi\Bean\Annotation\Bean;
+    use Imi\Config\Annotation\ConfigValue;
     use Imi\Server\Http\Message\Contract\IHttpResponse;
 
     /**
-     * @Bean(name="TestClass2", env="cli")
+     * @Bean(name="TestClass2", env=@ConfigValue(name="@test", default="cli"))
      */
     #[Bean(name: 'test456', env: 'fpm')]
     class TestClass2
