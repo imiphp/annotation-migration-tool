@@ -162,7 +162,9 @@ class RewriteVisitor extends NodeVisitorAbstract
             return null;
         }
         $propName =  (string) $node->props[0]->name;
-        $this->logger->debug("> Property: {$this->currentClass->name}::{$propName}");
+        if ($this->debug) {
+            $this->logger->debug("> Property: {$this->currentClass->name}::{$propName}");
+        }
         $property = $this->topClassReflection->getProperty($propName);
         $annotations = $this->reader->getPropertyAnnotations($property);
         $attrGroups = [];

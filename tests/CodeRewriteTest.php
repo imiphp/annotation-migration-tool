@@ -26,7 +26,7 @@ class CodeRewriteTest extends TestCase
             }
         };
 
-        $crg = new CodeRewriteGenerator($logger);
+        $crg = new CodeRewriteGenerator($logger, false);
 
         $handle = $crg->generate($filename);
 
@@ -49,18 +49,18 @@ class CodeRewriteTest extends TestCase
             
             namespace Imiphp\Tests\Stub;
             
-            use Imi\Bean\Annotation\Listener;
-            use Imi\Util\ImiPriority;
-            use Imi\Server\Http\Message\Contract\IHttpResponse;
-            use Imi\Server\Http\Route\Annotation\Action;
-            use Imi\Bean\Annotation\Bean;
             use Imi\Aop\Annotation\Inject;
+            use Imi\Bean\Annotation\Bean;
+            use Imi\Bean\Annotation\Listener;
             use Imi\Cache\Annotation\Cacheable;
             use Imi\Cron\Contract\ICronManager;
-            use Imi\Lock\Annotation\Lockable;
-            use Imi\Server\Http\Message\Emitter\SseEmitter;
             use Imi\Facade\Annotation\Facade;
+            use Imi\Lock\Annotation\Lockable;
+            use Imi\Server\Http\Message\Contract\IHttpResponse;
+            use Imi\Server\Http\Message\Emitter\SseEmitter;
+            use Imi\Server\Http\Route\Annotation\Action;
             use Imi\Server\WebSocket\Route\Annotation\WSConfig;
+            use Imi\Util\ImiPriority;
             
             
             #[Bean(name: 'test456', env: 'fpm')]
@@ -128,8 +128,9 @@ class CodeRewriteTest extends TestCase
                 declare(strict_types=1);
                 
                 namespace Imiphp\Tests\Stub {
-                    use Imi\Server\Http\Message\Contract\IHttpResponse;
+
                     use Imi\Bean\Annotation\Bean;
+                    use Imi\Server\Http\Message\Contract\IHttpResponse;
                 
                     
                     #[Bean(name: 'test456', env: 'fpm')]
