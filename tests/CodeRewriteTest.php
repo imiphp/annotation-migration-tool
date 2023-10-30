@@ -17,7 +17,7 @@ class CodeRewriteTest extends TestCase
             protected array $logs = [];
             public function log($level, \Stringable|string $message, array $context = []): void
             {
-                $this->logs[] = \sprintf('%s: %s', $level, $message);
+                $this->logs[] = \sprintf('[%s]: %s', $level, $message);
             }
 
             public function getLogs(): array
@@ -26,7 +26,7 @@ class CodeRewriteTest extends TestCase
             }
         };
 
-        $crg = new CodeRewriteGenerator($logger, true);
+        $crg = new CodeRewriteGenerator($logger, false);
 
         $handle = $crg->generate($filename);
 
