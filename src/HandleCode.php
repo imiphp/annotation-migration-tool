@@ -88,7 +88,7 @@ class HandleCode
             $commentPadLen = 0;
             $kindNameStartPos = $item->node->getStartFilePos();
 
-            if (Node\Stmt\Class_::class === $item->kind) {
+            if ($item->rootNode instanceof Node\Stmt\ClassLike) {
                 // 忽略处理 class 与行开头之间的可能存在空的情况
                 $testContent = \substr($contents, 0, $kindNameStartPos + 1);
                 if (false === \preg_match_all('#\n(\s*)(final|abstract|trait|class)#i', $testContent, $matches, \PREG_OFFSET_CAPTURE|\PREG_UNMATCHED_AS_NULL)) {
@@ -107,7 +107,6 @@ class HandleCode
                         . \substr($contents, $classKindPos + 1);
                 }
             } elseif (Node\Stmt\ClassMethod::class === $item->kind) {
-
                 $testContent = \substr($contents, 0, $kindNameStartPos + 1);
                 if (false === \preg_match_all('#\n(\s*)(public|protected|private|function)#i', $testContent, $matches, \PREG_OFFSET_CAPTURE|\PREG_UNMATCHED_AS_NULL)) {
                     continue;

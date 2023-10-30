@@ -42,7 +42,7 @@ class CodeRewriteTest extends TestCase
 
     public static function rewriteCodeDataProvider(): \Generator
     {
-        yield [
+        yield 'class1' => [
             __DIR__ . '/Stub/TestClass1.php',
             <<<PHP
             <?php
@@ -121,7 +121,7 @@ class CodeRewriteTest extends TestCase
             PHP,
         ];
 
-        yield [
+        yield 'class2' =>  [
             __DIR__ . '/Stub/TestClass2.php',
             <<<PHP
                 <?php
@@ -160,7 +160,7 @@ class CodeRewriteTest extends TestCase
                 PHP,
         ];
 
-        yield [
+        yield 'no_namespace' =>  [
             __DIR__ . '/Stub/no_namespace_class.php',
             <<<PHP
                 <?php
@@ -175,7 +175,7 @@ class CodeRewriteTest extends TestCase
                 PHP,
         ];
 
-        yield [
+        yield 'class_const' => [
             __DIR__ . '/Stub/TestEnum.php',
             <<<PHP
                 <?php
@@ -204,7 +204,7 @@ class CodeRewriteTest extends TestCase
                 PHP,
         ];
 
-        yield [
+        yield 'space1' => [
             __DIR__ . '/Stub/TestScheduler.php',
             <<<PHP
                 <?php
@@ -249,7 +249,7 @@ class CodeRewriteTest extends TestCase
                 PHP,
         ];
 
-        yield [
+        yield 'annotation_class' => [
             __DIR__ . '/Stub/TestBaseInjectValue.php',
             <<<PHP
                 <?php
@@ -275,6 +275,31 @@ class CodeRewriteTest extends TestCase
                     abstract public function getRealValue();
                 }
                 
+                PHP,
+        ];
+
+        yield 'trait_1' => [
+            __DIR__ . '/Stub/TestTPartialClassA1.php',
+            <<<PHP
+                <?php
+                declare(strict_types=1);
+                
+                namespace Imiphp\Tests\Stub;
+                
+                use Imi\Bean\Annotation\Partial;
+
+                
+                #[Partial(class: \Imiphp\Tests\Stub\TestClass1::class)]
+                trait TestTPartialClassA1
+                {
+                    public int \$test2Value = 2;
+                
+                    public function test2(): int
+                    {
+                        return \$this->test2Value;
+                    }
+                }
+
                 PHP,
         ];
     }

@@ -31,7 +31,7 @@ class RewriteVisitor extends NodeVisitorAbstract
     /** @var Node\Stmt\UseUse[] */
     protected array $uses = [];
 
-    protected ?Node\Stmt\Class_ $currentClass = null;
+    protected ?Node\Stmt\ClassLike $currentClass = null;
 
     protected bool $isAbort = false;
 
@@ -74,9 +74,9 @@ class RewriteVisitor extends NodeVisitorAbstract
                     $this->logger->debug("> Enter block namespace: {$node?->name}");
                 }
                 break;
-            case $node instanceof Node\Stmt\Class_:
+            case $node instanceof Node\Stmt\ClassLike:
                 $this->currentClass = $node;
-                if ($node->isAnonymous()) {
+                if ($node instanceof Node\Stmt\Class_ && $node->isAnonymous()) {
                     // 跳过匿名
                     return;
                 } elseif (null !== $this->topClassReflection) {
@@ -90,14 +90,15 @@ class RewriteVisitor extends NodeVisitorAbstract
                 } else {
                     $class = (string) $node->name;
                 }
-                if (!\class_exists($class)) {
-                    $this->logger->warning("Class not exists: $class");
-                    return;
-                }
                 if ($this->debug) {
                     $this->logger->debug("> Enter block class: $class");
                 }
-                $reflection = new \ReflectionClass($class);
+                try {
+                    $reflection = new \ReflectionClass($class);
+                } catch (\ReflectionException $e) {
+                    $this->logger->warning("Class not exists: $class");
+                    return;
+                }
                 // 设置顶级类
                 $this->topClassReflection = $reflection;
                 break;
@@ -114,7 +115,7 @@ class RewriteVisitor extends NodeVisitorAbstract
         if ($this->isAbort) {
             return null;
         }
-        if ($node instanceof Node\Stmt\Class_) {
+        if ($node instanceof Node\Stmt\ClassLike) {
             if (null !== $this->currentClass && \spl_object_id($this->currentClass) !== \spl_object_id($node)) {
                 throw new \RuntimeException('Class node not match');
             }
@@ -125,7 +126,8 @@ class RewriteVisitor extends NodeVisitorAbstract
         }
 
         return match (true) {
-            $node instanceof Node\Stmt\Class_ => $this->generateClassAttributes(/* @var $node Node\Stmt\Class_ */ $node),
+            $node instanceof Node\Stmt\ClassLike => $this->generateClassAttributes(/* @var $node Node\Stmt\ClassLike */ $node),
+            // $node instanceof Node\Stmt\Trait_ => $this->generateClassAttributes(/* @var $node Node\Stmt\Trait_ */ $node),
             $node instanceof Node\Stmt\ClassMethod => $this->generateClassMethodAttributes(/* @var $node Node\Stmt\ClassMethod */ $node),
             $node instanceof Node\Stmt\Property => $this->generateClassPropertyAttributes(/* @var $node Node\Stmt\Property */ $node),
             $node instanceof Node\Stmt\ClassConst => $this->generateClassConstAttributes(/* @var $node Node\Stmt\ClassConst */ $node),
@@ -133,9 +135,9 @@ class RewriteVisitor extends NodeVisitorAbstract
         };
     }
 
-    private function generateClassAttributes(Node\Stmt\Class_ $node): ?Node\Stmt\Class_
+    private function generateClassAttributes(Node\Stmt\ClassLike $node): null|Node\Stmt\ClassLike
     {
-        if ($node->isAnonymous()) {
+        if ($node instanceof Node\Stmt\Class_ && $node->isAnonymous()) {
             // 匿名类不处理
             return null;
         }
@@ -145,7 +147,7 @@ class RewriteVisitor extends NodeVisitorAbstract
 
     private function generateClassMethodAttributes(Node\Stmt\ClassMethod $node): ?Node\Stmt\ClassMethod
     {
-        if ($this->currentClass?->isAnonymous()) {
+        if ($this->currentClass instanceof Node\Stmt\Class_ && $this->currentClass?->isAnonymous()) {
             // 匿名类不处理
             return null;
         }
@@ -155,7 +157,7 @@ class RewriteVisitor extends NodeVisitorAbstract
 
     private function generateClassPropertyAttributes(Node\Stmt\Property $node): ?Node\Stmt\Property
     {
-        if ($this->currentClass?->isAnonymous()) {
+        if ($this->currentClass instanceof Node\Stmt\Class_ && $this->currentClass?->isAnonymous()) {
             // 匿名类不处理
             return null;
         }
@@ -187,6 +189,7 @@ class RewriteVisitor extends NodeVisitorAbstract
             $attribute = $attrGroups ? $this->generator->getPrinter()->prettyPrint($attrGroups) : '';
             $this->handleCode->pushCommentRewriteQueue(new CommentRewriteItem(
                 kind: $node::class,
+                rootNode: $node,
                 node: $node->props[0],
                 rawDoc: $commentDoc,
                 newComment: (string) $comments,
@@ -198,7 +201,7 @@ class RewriteVisitor extends NodeVisitorAbstract
 
     private function generateClassConstAttributes(Node\Stmt\ClassConst $node): ?Node\Stmt\ClassConst
     {
-        if ($this->currentClass?->isAnonymous()) {
+        if ($this->currentClass instanceof Node\Stmt\Class_ && $this->currentClass?->isAnonymous()) {
             // 匿名类不处理
             return null;
         }
@@ -232,6 +235,7 @@ class RewriteVisitor extends NodeVisitorAbstract
             $this->handleCode->pushCommentRewriteQueue(
                 new CommentRewriteItem(
                     kind: $node::class,
+                    rootNode: $node,
                     node: $node->consts[0],
                     rawDoc: $commentDoc,
                     newComment: (string) $comments,
@@ -245,10 +249,10 @@ class RewriteVisitor extends NodeVisitorAbstract
 
 
     /**
-     * @param Node\Stmt\Class_ $node
+     * @param Node\Stmt\ClassLike $node
      * @param ImiAnnotationBase[] $annotations
      */
-    protected function generateAttributeAndSaveComments(Node $node, array $annotations): Node\Stmt\Class_|Node\Stmt\ClassMethod
+    protected function generateAttributeAndSaveComments(Node $node, array $annotations): Node\Stmt\ClassLike|Node\Stmt\ClassMethod
     {
         if ($node instanceof Node\Stmt\Class_ && $node->isAnonymous()) {
             // 匿名类不处理
@@ -293,11 +297,12 @@ class RewriteVisitor extends NodeVisitorAbstract
             $attribute = $attrGroups ? $this->generator->getPrinter()->prettyPrint($attrGroups) : '';
             $this->handleCode->pushCommentRewriteQueue(new CommentRewriteItem(
                 kind: $node::class,
+                rootNode: $node,
                 node: $node->name,
                 rawDoc: $commentDoc,
                 newComment: (string) $comments,
                 newAttribute: $attribute,
-            ), $node instanceof Node\Stmt\Class_);
+            ), $node instanceof Node\Stmt\ClassLike);
         }
 
         return $node;

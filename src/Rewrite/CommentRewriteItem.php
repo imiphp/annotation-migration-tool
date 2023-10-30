@@ -7,6 +7,7 @@ class CommentRewriteItem
 {
     public function __construct(
         readonly public string $kind,
+        readonly public ?\PhpParser\Node $rootNode,
         readonly public ?\PhpParser\Node $node,
         readonly public ?\PhpParser\Comment\Doc $rawDoc,
         readonly public string $newComment,
