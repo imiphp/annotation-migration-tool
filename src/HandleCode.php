@@ -212,11 +212,12 @@ class HandleCode
         $output = self::trimCommentEmpty($output);
         $output = \array_reverse($output);
 
-        $output[] = $pad . " */";
-        $output = implode("\n", $output);
+
         if (self::isEmptyComments($output)) {
             return '';
         }
+        $output[] = $pad . " */";
+        $output = implode("\n", $output);
         return "/**\n" . $output;
     }
 
@@ -239,9 +240,9 @@ class HandleCode
         return $output;
     }
 
-    protected static function isEmptyComments(string $comments): bool
+    protected static function isEmptyComments(array $lines): bool
     {
-        foreach (\explode("\n", $comments) as $comment) {
+        foreach ($lines as $comment) {
             if (preg_match('/^[\s*\/]*$/', $comment) === 0) {
                 return false;
             }

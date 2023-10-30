@@ -216,8 +216,6 @@ class CodeRewriteTest extends TestCase
                 use Imi\Aop\Annotation\Inject;
                 use Imi\Bean\Annotation\Bean;
                 use Imi\Cron\Contract\ICronManager;
-                use Imi\Cron\CronCalculator;
-                use Imi\Cron\CronLock;
                 
                 /**
                  * 定时任务调度器
