@@ -22,5 +22,12 @@ namespace Imiphp\Tests\Stub {
          * 响应.
          */
         public IHttpResponse $response;
+
+        /**
+         * 正在执行的任务列表.
+         *
+         * @var \Imi\Cron\CronTask[]
+         */
+        public array $runningTasks = [];
     }
 }

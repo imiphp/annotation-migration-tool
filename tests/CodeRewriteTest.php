@@ -147,6 +147,13 @@ class CodeRewriteTest extends TestCase
                          * 响应.
                          */
                         public IHttpResponse \$response;
+
+                        /**
+                         * 正在执行的任务列表.
+                         *
+                         * @var \Imi\Cron\CronTask[]
+                         */
+                        public array \$runningTasks = [];
                     }
                 }
                 
@@ -194,6 +201,53 @@ class CodeRewriteTest extends TestCase
                     #[EnumItem(text: '丙', other: 'c3')]
                     const C = 3;
                 }
+                PHP,
+        ];
+
+        yield [
+            __DIR__ . '/Stub/TestScheduler.php',
+            <<<PHP
+                <?php
+                
+                declare(strict_types=1);
+                
+                namespace Imiphp\Tests\Stub;
+                
+                use Imi\Aop\Annotation\Inject;
+                use Imi\Bean\Annotation\Bean;
+                use Imi\Cron\Contract\ICronManager;
+                use Imi\Cron\CronCalculator;
+                use Imi\Cron\CronLock;
+                
+                /**
+                 * 定时任务调度器
+                 */
+                #[Bean(name: 'CronScheduler')]
+                class TestScheduler
+                {
+                    
+                    #[Inject(name: 'CronManager')]
+                    protected ICronManager \$cronManager;
+                
+                    /**
+                     * 下次执行时间集合.
+                     */
+                    protected array \$nextTickTimeMap = [];
+                
+                    /**
+                     * 正在执行的任务列表.
+                     *
+                     * @var \Imi\Cron\CronTask[]
+                     */
+                    #[Inject(name: 'CronManager')]
+                    protected array \$runningTasks = [];
+                
+                    /**
+                     * 首次执行记录集合.
+                     */
+                    protected array \$firstRunMap = [];
+                }
+                
                 PHP,
         ];
     }

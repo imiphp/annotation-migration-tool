@@ -162,7 +162,7 @@ class HandleCode
 
             if ($item->newComment && null !== $item->rawDoc) {
                 $contents = \substr($contents, 0, $item->rawDoc->getStartFilePos() )
-                    . self::cleanComments($item->newComment, $commentPadLen)
+                    . self::cleanComments($item->newComment, $commentPadLen, false)
                     . \substr($contents, $item->rawDoc->getEndFilePos() + 1);
             }
         }
@@ -184,28 +184,33 @@ class HandleCode
         return implode("\n", $output);
     }
 
-    public static function cleanComments(string $comments, int $paddingLen = 0): string
+    public static function cleanComments(string $comments, int $paddingLen = 0, bool $cleanEmptyLine = true): string
     {
         $output = [];
         $pad = \str_repeat(' ', $paddingLen);
         foreach (\explode("\n", $comments) as $comment) {
-            $comment1 = \trim($comment);
-            if ($comment1 === '') {
+            if (empty(\trim($comment))) {
                 continue;
             }
+            $comment1 = \ltrim($comment);
             if (
                 !(preg_match('/^\/\*+$/u', $comment1) === 0
-                    && preg_match('/^\*+\/$/u', $comment1) === 0
-                    && preg_match('/^\*+$/u', $comment1) === 0
+                  && preg_match('/^\*+\/$/u', $comment1) === 0
                 )
             ) {
                 continue;
             }
             if ($comment1[0] === '*') {
+                // 往前补充一个空使其对齐
                 $comment1 = ' ' . $comment1;
             }
             $output[] = $pad . $comment1;
         }
+
+        $output = self::trimCommentEmpty($output);
+        $output = \array_reverse($output);
+        $output = self::trimCommentEmpty($output);
+        $output = \array_reverse($output);
 
         $output[] = $pad . " */";
         $output = implode("\n", $output);
@@ -213,6 +218,25 @@ class HandleCode
             return '';
         }
         return "/**\n" . $output;
+    }
+
+    protected static function trimCommentEmpty(array $lines): array
+    {
+        $output = [];
+
+        $testFirstEmpty = true;
+        foreach ($lines as $str) {
+            if ($testFirstEmpty) {
+                $str2 = \trim($str, " \t\n\r\0\x0B*");
+                if (empty($str2)) {
+                    continue;
+                }
+            }
+            $output[] = $str;
+            $testFirstEmpty = false;
+        }
+
+        return $output;
     }
 
     protected static function isEmptyComments(string $comments): bool
