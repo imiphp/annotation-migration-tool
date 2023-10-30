@@ -88,7 +88,7 @@ class RewriteVisitor extends NodeVisitorAbstract
                 if ($this->namespace) {
                     $class = $this->namespace->name . '\\' . $node->name;
                 } else {
-                    $class = $node->name;
+                    $class = (string) $node->name;
                 }
                 if (!\class_exists($class)) {
                     $this->logger->warning("Class not exists: $class");
