@@ -98,9 +98,6 @@ class RewriteVisitor extends NodeVisitorAbstract
                     $this->logger->debug("> Enter block class: $class");
                 }
                 $reflection = new \ReflectionClass($class);
-                if ($reflection->isSubclassOf(ImiAnnotationBase::class)) {
-                    return;
-                }
                 // 设置顶级类
                 $this->topClassReflection = $reflection;
                 break;
