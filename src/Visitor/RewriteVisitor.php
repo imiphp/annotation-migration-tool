@@ -131,6 +131,7 @@ class RewriteVisitor extends NodeVisitorAbstract
             $node instanceof Node\Stmt\Class_ => $this->generateClassAttributes(/* @var $node Node\Stmt\Class_ */ $node),
             $node instanceof Node\Stmt\ClassMethod => $this->generateClassMethodAttributes(/* @var $node Node\Stmt\ClassMethod */ $node),
             $node instanceof Node\Stmt\Property => $this->generateClassPropertyAttributes(/* @var $node Node\Stmt\Property */ $node),
+            $node instanceof Node\Stmt\ClassConst => $this->generateClassConstAttributes(/* @var $node Node\Stmt\ClassConst */ $node),
             default => null,
         };
     }
@@ -193,10 +194,58 @@ class RewriteVisitor extends NodeVisitorAbstract
                 rawDoc: $commentDoc,
                 newComment: (string) $comments,
                 newAttribute: $attribute,
-            ), $node instanceof Node\Stmt\Class_);
+            ), false);
         }
         return $node;
     }
+
+    private function generateClassConstAttributes(Node\Stmt\ClassConst $node): ?Node\Stmt\ClassConst
+    {
+        if ($this->currentClass?->isAnonymous()) {
+            // 匿名类不处理
+            return null;
+        }
+
+        $constName =  (string) $node->consts[0]->name;
+        if ($this->debug) {
+            $this->logger->debug("> Const: {$this->currentClass->name}::{$constName}");
+        }
+        $constant = $this->topClassReflection->getReflectionConstant($constName);
+        $annotations = $this->reader->getConstantAnnotations($constant);
+        $attrGroups = [];
+        $commentDoc = Helper::arrayValueLast($node->getComments());
+        $comments = $commentDoc?->getText();
+        /** @var ImiAnnotationBase[] $annotations */
+        foreach ($annotations as $annotation) {
+            if (!$annotation instanceof ImiAnnotationBase) {
+                continue;
+            }
+            $attrGroups[] = new Node\AttributeGroup([
+                new Node\Attribute(
+                    $this->guessName($this->getClassName($annotation)),
+                    $this->buildAttributeArgs($annotation, $args ?? []),
+                ),
+            ]);
+            $comments = $this->removeAnnotationFromCommentsEx($comments, $annotation);
+            $this->handleCode->setModified();
+        }
+
+        if ($this->handleCode->isModified()) {
+            $attribute = $attrGroups ? $this->generator->getPrinter()->prettyPrint($attrGroups) : '';
+            $this->handleCode->pushCommentRewriteQueue(
+                new CommentRewriteItem(
+                    kind: $node::class,
+                    node: $node->consts[0],
+                    rawDoc: $commentDoc,
+                    newComment: (string) $comments,
+                    newAttribute: $attribute,
+                ),
+                false,
+            );
+        }
+        return $node;
+    }
+
 
     /**
      * @param Node\Stmt\Class_ $node

@@ -141,6 +141,23 @@ class HandleCode
                         . self::linePadding($item->newAttribute, $commentPadLen) . "\n"
                         . \substr($contents, $methodLinePos + 1);
                 }
+            } elseif (Node\Stmt\ClassConst::class === $item->kind) {
+                $testContent = \substr($contents, 0, $kindNameStartPos + 1);
+                if (false === \preg_match_all('#\n(\s*)(public|protected|private|const)#i', $testContent, $matches, \PREG_OFFSET_CAPTURE|\PREG_UNMATCHED_AS_NULL)) {
+                    continue;
+                }
+                // 获取行空格对齐
+                [$matchAllSet, $commentPadSet] = $matches;
+                $targetItem = $matchAllSet[\array_key_last($matchAllSet)];
+                $methodLinePos = $targetItem[1] ?? false;
+
+                $commentPadLen = \strlen($commentPadSet[\array_key_last($commentPadSet)][0]);
+
+                if ($item->newAttribute && \is_numeric($methodLinePos)) {
+                    $contents = \substr($contents, 0, $methodLinePos + 1)
+                        . self::linePadding($item->newAttribute, $commentPadLen) . "\n"
+                        . \substr($contents, $methodLinePos + 1);
+                }
             }
 
             if ($item->newComment && null !== $item->rawDoc) {
