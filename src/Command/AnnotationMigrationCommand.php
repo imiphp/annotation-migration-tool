@@ -119,7 +119,12 @@ class AnnotationMigrationCommand extends Command
             if ($handle->isModified()) {
                 $output->writeln("Rewrite\t{$item->getRealPath()}");
                 if (!$isDryRun) {
-                    file_put_contents($item->getRealPath(), $handle->rewriteCode());
+                    if ($isAnnotationRewrite) {
+                        $code = $handle->execPrintStmt();
+                    } else {
+                        $code = $handle->rewriteCode();
+                    }
+                    file_put_contents($item->getRealPath(), $code);
                 }
             } else {
                 $output->writeln("Skip\t{$item->getRealPath()}");
