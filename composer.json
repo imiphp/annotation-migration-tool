@@ -19,7 +19,7 @@
         "symfony/finder": "^5.4|^6.0",
         "symfony/console": "^5.4|^6.0",
         "psr/log": "~2.0|~3.0",
-        "yurunsoft/doctrine-annotations": "dev-yurun as 1.999.x-dev"
+        "yurunsoft/doctrine-annotations": "^1.104.3"
     },
     "require-dev": {
         "imiphp/imi": "3.0.x-dev",
