@@ -25,8 +25,8 @@ class AnnotationMigrationCommand extends Command
         $this
             ->addOption('dir', null, InputOption::VALUE_OPTIONAL|InputOption::VALUE_IS_ARRAY, '自定义扫描目录', ['src'])
             ->addOption('dry-run', 'd', InputOption::VALUE_NONE, '尝试运行，不生成文件')
-            ->addOption('catch-continue', null, InputOption::VALUE_NEGATABLE, '遇到异常时继续')
-            ->addOption('error-continue', null, InputOption::VALUE_NEGATABLE, '遇到错误时继续')
+            ->addOption('catch-continue', null, InputOption::VALUE_NEGATABLE, '遇到异常时继续', true)
+            ->addOption('error-continue', null, InputOption::VALUE_NEGATABLE, '遇到错误时继续', true)
             ->addOption('init-config', null, InputOption::VALUE_NONE, '在当前目录生成配置文件')
             ->setDescription('迁移注解为 PHP8 原生实现');
     }
