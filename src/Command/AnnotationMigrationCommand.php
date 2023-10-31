@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Imiphp\Tool\AnnotationMigration\Command;
 
 use Imiphp\Tool\AnnotationMigration\CodeRewriteGenerator;
+use Imiphp\Tool\AnnotationMigration\Exception\ErrorAbortException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -24,7 +25,8 @@ class AnnotationMigrationCommand extends Command
         $this
             ->addOption('dir', null, InputOption::VALUE_OPTIONAL|InputOption::VALUE_IS_ARRAY, '自定义扫描目录', ['src'])
             ->addOption('dry-run', 'd', InputOption::VALUE_NONE, '尝试运行，不生成文件')
-            ->addOption('error-continue', null, InputOption::VALUE_NEGATABLE, '遇到错误时继续')
+            ->addOption('catch-continue', null, InputOption::VALUE_NEGATABLE, '遇到异常时继续')
+            ->addOption('error-abort', null, InputOption::VALUE_NEGATABLE, '遇到错误时中止')
             ->addOption('init-config', null, InputOption::VALUE_NONE, '在当前目录生成配置文件')
             ->setDescription('迁移注解为 PHP8 原生实现');
     }
@@ -63,7 +65,8 @@ class AnnotationMigrationCommand extends Command
         }
 
         $isDryRun = $input->getOption('dry-run');
-        $isErrorContinue = $input->getOption('error-continue');
+        $isCatchContinue = $input->getOption('catch-continue');
+        $isErrorAbort = $input->getOption('error-abort');
 
         $dirs = $input->getOption('dir');
 
@@ -84,13 +87,22 @@ class AnnotationMigrationCommand extends Command
         foreach ($finder as $item) {
             try {
                 $handle = $generator->generate(filename: $item->getRealPath());
+            } catch (ErrorAbortException $abortException) {
+                $isError = true;
+
+                $output->writeln("Error\t{$item->getRealPath()}");
+                if ($isErrorAbort) {
+                    break;
+                } else {
+                    continue;
+                }
             } catch (\Throwable $throwable) {
                 $isError = true;
 
                 $output->writeln("Error\t{$item->getRealPath()}");
                 $output->writeln('> ' . $throwable);
                 $output->writeln('> ' . $throwable->getTraceAsString());
-                if ($isErrorContinue) {
+                if ($isCatchContinue) {
                     continue;
                 } else {
                     break;

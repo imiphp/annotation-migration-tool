@@ -175,7 +175,7 @@ class CodeRewriteTest extends TestCase
                 PHP,
         ];
 
-        yield 'class_const' => [
+        yield 'class_const_and_enum' => [
             __DIR__ . '/Stub/TestEnum.php',
             <<<PHP
                 <?php
@@ -190,15 +190,15 @@ class CodeRewriteTest extends TestCase
                 class TestEnum extends BaseEnum
                 {
                     
-                    #[EnumItem(text: '甲', other: 'a1')]
+                    #[EnumItem(text: '甲')]
                     public const A = 1;
                 
                     
-                    #[EnumItem(text: '乙', other: 'b2')]
+                    #[EnumItem(text: '乙')]
                     protected const B = 2;
 
                     
-                    #[EnumItem(text: '丙', other: 'c3')]
+                    #[EnumItem(text: '丙')]
                     const C = 3;
                 }
                 PHP,

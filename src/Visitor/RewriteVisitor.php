@@ -6,6 +6,7 @@ namespace Imiphp\Tool\AnnotationMigration\Visitor;
 use Imi\Bean\Annotation\Base as ImiAnnotationBase;
 use Imi\Config\Annotation\ConfigValue;
 use Imiphp\Tool\AnnotationMigration\CodeRewriteGenerator;
+use Imiphp\Tool\AnnotationMigration\Exception\ErrorAbortException;
 use Imiphp\Tool\AnnotationMigration\HandleCode;
 use Imiphp\Tool\AnnotationMigration\Helper;
 use Imiphp\Tool\AnnotationMigration\Rewrite\CommentRewriteItem;
@@ -53,6 +54,12 @@ class RewriteVisitor extends NodeVisitorAbstract
         // 目前方案保留已经成功处理的更改
         // $this->handleCode->setModified(false);
         // $this->handleCode->clearRewriteQueue();
+    }
+
+    protected function clearModified(): void
+    {
+        $this->handleCode->setModified(false);
+        $this->handleCode->clearRewriteQueue();
     }
 
     public function enterNode(Node $node)
@@ -310,9 +317,17 @@ class RewriteVisitor extends NodeVisitorAbstract
 
     protected function buildAttributeArgs(ImiAnnotationBase $annotation, array $args = []): array
     {
-        $args = \array_merge($args, $this->getNotDefaultPropertyFromAnnotation($annotation));
+        $paramNames = [];
+        $args = \array_merge($args, $this->getNotDefaultPropertyFromAnnotation($annotation, $paramNames));
         $newArgs = [];
         foreach ($args as $key => $arg) {
+            if (!\in_array($key, $paramNames, true)) {
+                $this->abort();
+                $this->clearModified();
+                $message = sprintf("Attribute %s has extra argument: %s", $annotation::class, $key);
+                $this->logger->error($message);
+                throw new ErrorAbortException($message);
+            }
             if ($arg instanceof ConfigValue) {
                 $this->logger->warning("ConfigValue is not supported in attribute, Name: {$arg->name}");
                 $newArgs[$key] = $arg->default;
@@ -365,16 +380,18 @@ class RewriteVisitor extends NodeVisitorAbstract
         return [$class, '\\' . $class];
     }
 
-    protected function getNotDefaultPropertyFromAnnotation(ImiAnnotationBase $annotation): array
+    protected function getNotDefaultPropertyFromAnnotation(ImiAnnotationBase $annotation, array &$paramNames = []): array
     {
         $params = $annotation->toArray();
         $ref = new \ReflectionClass($annotation);
         $methodRef = $ref->getConstructor();
+        $paramNames = [];
         foreach ($methodRef->getParameters() as $parameter) {
             $name = $parameter->getName();
             if ('__data' === $name) {
                 continue;
             }
+            $paramNames[] = $name;
             if ($parameter->isDefaultValueAvailable() && $parameter->getDefaultValue() === $params[$name]) {
                 unset($params[$name]);
             }
