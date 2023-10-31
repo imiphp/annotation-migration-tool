@@ -289,6 +289,7 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
             $propsMap[$prop->var->name] = $prop;
         }
 
+        $commentPropMap = [];
         foreach ($comments as $comment) {
             if ('property' !== $comment['kind']) {
                 $classComments[] = $comment['raw'];
@@ -300,13 +301,23 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
                 $classComments[] = $comment['raw'];
                 continue;
             }
+            $commentPropMap[$meta['name']] = $comment;
+        }
+
+        foreach ($propsMap as $name => $prop) {
+            $meta = $commentPropMap[$name]['meta'] ?? null;
             $methodComments = [];
-            if ($meta['comment']) {
+            if (!empty($meta['comment'])) {
                 $methodComments[] = '* ' . $meta['comment'];
-            }
+            };
             if (empty($prop->type)) {
                 // 使用文档注解类型
                 $methodComments[] = "* @var {$meta['type']}";
+            } elseif (\str_contains($propRawType = $this->generator->getPrinter()->prettyPrint([$prop->type]), 'callable') || \str_contains($meta['type'], 'callable')) {
+                // callable 不能作为属性类型
+                $propRawType = $propRawType ?: $meta['type'];
+                $methodComments[] = "* @var {$propRawType}";
+                $prop->type = null;
             }
             if (!empty($methodComments)) {
                 $prop->setDocComment(new Doc("/**\n " . implode("\n ", $methodComments) . "\n */"));

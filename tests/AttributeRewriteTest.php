@@ -101,7 +101,15 @@ class AttributeRewriteTest extends TestCase
                          * immediate标志位；当immediate标志位设置为true时，如果exchange在将消息route到queue(s)时发现对应的queue上没有消费者，那么这条消息不会放入队列中。当与消息routeKey关联的所有queue(一个或多个)都没有消费者时，该消息会通过basic.return方法返还给生产者。
                          */
                         public bool \$immediate = false,
-                        public ?int \$ticket = null
+                        public ?int \$ticket = null,
+                        /**
+                         * @var ?callable
+                         */
+                        public \$call1 = null,
+                        /**
+                         * @var callable
+                         */
+                        public \$call2 = null
                     )
                     {
                         parent::__construct(...\\func_get_args());
