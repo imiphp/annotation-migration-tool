@@ -101,6 +101,10 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
                     $this->logger->warning("Class not exists: $class");
                     return;
                 }
+                if (!$reflection->isSubclassOf(ImiAnnotationBase::class)) {
+                    // 跳过非注解类
+                    return;
+                }
                 // 设置顶级类
                 $this->topClassReflection = $reflection;
                 break;

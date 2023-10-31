@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Imiphp\Tool\AnnotationMigration\Command;
 
-use Imiphp\Tool\AnnotationMigration\AttributeRewriteGenerator;
 use Imiphp\Tool\AnnotationMigration\CodeRewriteGenerator;
 use Imiphp\Tool\AnnotationMigration\Exception\ErrorAbortException;
 use Symfony\Component\Console\Command\Command;
@@ -14,7 +13,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Finder\Finder;
 use Yurun\Doctrine\Common\Annotations\AnnotationReader;
 
-class AnnotationMigrationCommand extends Command
+class AnnotationRewriteCommand extends Command
 {
     protected static $defaultName = 'annotation';
 
@@ -26,7 +25,6 @@ class AnnotationMigrationCommand extends Command
         $this
             ->addOption('dir', null, InputOption::VALUE_OPTIONAL|InputOption::VALUE_IS_ARRAY, '自定义扫描目录', ['src'])
             ->addOption('dry-run', 'd', InputOption::VALUE_NONE, '尝试运行，不生成文件')
-            ->addOption('annotation-rewrite', 'a', InputOption::VALUE_NONE, '重写注解类')
             ->addOption('catch-continue', null, InputOption::VALUE_NEGATABLE, '遇到异常时继续', true)
             ->addOption('error-continue', null, InputOption::VALUE_NEGATABLE, '遇到错误时继续', true)
             ->addOption('init-config', null, InputOption::VALUE_NONE, '在当前目录生成配置文件')
@@ -67,7 +65,6 @@ class AnnotationMigrationCommand extends Command
         }
 
         $isDryRun = $input->getOption('dry-run');
-        $isAnnotationRewrite = $input->getOption('annotation-rewrite');
         $isCatchContinue = $input->getOption('catch-continue');
         $isErrorContinue = $input->getOption('error-continue');
 
@@ -84,11 +81,7 @@ class AnnotationMigrationCommand extends Command
 
         $logger = new ConsoleLogger($output);
 
-        if ($isAnnotationRewrite) {
-            $generator = new AttributeRewriteGenerator($logger, $output->isDebug());
-        } else {
-            $generator = new CodeRewriteGenerator($logger, $output->isDebug());
-        }
+        $generator = new CodeRewriteGenerator($logger, $output->isDebug());
 
         $isError = false;
         foreach ($finder as $item) {
