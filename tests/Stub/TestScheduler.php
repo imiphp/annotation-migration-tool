@@ -27,6 +27,7 @@ class TestScheduler
 
     /**
      * 正在执行的任务列表.
+     *
      * @Inject("CronManager")
      *
      * @var \Imi\Cron\CronTask[]
@@ -35,7 +36,6 @@ class TestScheduler
 
     /**
      * 首次执行记录集合.
-     *
      */
     protected array $firstRunMap = [];
 }

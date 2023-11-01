@@ -23,6 +23,7 @@
     },
     "require-dev": {
         "imiphp/imi": "3.0.x-dev",
+        "php-cs-fixer/shim": "~3.35.1",
         "phpunit/phpunit": "^10.4",
         "symfony/var-dumper": "^6.3"
     },

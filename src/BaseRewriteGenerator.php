@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Imiphp\Tool\AnnotationMigration;
@@ -13,14 +14,13 @@ use Yurun\Doctrine\Common\Annotations\AnnotationReader;
 abstract class BaseRewriteGenerator
 {
     protected AnnotationReader $reader;
-    protected Parser           $parser;
-    protected Standard         $printer;
+    protected Parser $parser;
+    protected Standard $printer;
 
     public function __construct(
         readonly public LoggerInterface $logger,
         readonly public bool $debug,
-    )
-    {
+    ) {
         $this->reader = new AnnotationReader();
 
         $factory = new ParserFactory();

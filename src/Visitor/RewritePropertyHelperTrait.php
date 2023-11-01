@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Imiphp\Tool\AnnotationMigration\Visitor;
@@ -9,10 +10,13 @@ trait RewritePropertyHelperTrait
 {
     protected function getInjectPropertyType(Node\Name $type): ?string
     {
-        if (in_array($type->toString(), $this->baseType(), true)) {
+        if (\in_array($type->toString(), $this->baseType(), true))
+        {
             return $type->toString();
         }
-        return match (true) {
+
+        return match (true)
+        {
             $type->isRelative(), $type->isQualified(), $type->isUnqualified() => $this->namespace
                 ? ($this->namespace->name->toString() . '\\' . $type->toString())
                 : $type->toString(),
@@ -22,10 +26,14 @@ trait RewritePropertyHelperTrait
 
     protected function guessName(string $name): Node\Name
     {
-        if (str_contains($name, '\\')) {
-            $name = \ltrim($name, '\\');
+        if (str_contains($name, '\\'))
+        {
+            $name = ltrim($name, '\\');
+
             return new Node\Name\FullyQualified($name);
-        } else {
+        }
+        else
+        {
             return new Node\Name($name);
         }
     }
@@ -33,30 +41,39 @@ trait RewritePropertyHelperTrait
     protected function guessClassPropertyType(Node\Stmt\Property $node, \ReflectionProperty $property): array
     {
         $fromComment = false;
-        if ($node->type) {
+        if ($node->type)
+        {
             return [$node->type, $fromComment];
         }
-        if ($type = $this->readTypeFromPropertyComment($property)) {
+        if ($type = $this->readTypeFromPropertyComment($property))
+        {
             $fromComment = true;
-            if (str_ends_with($type, '[]')) {
+            if (str_ends_with($type, '[]'))
+            {
                 return [new Node\Name('array'), $fromComment];
             }
-            if ($type !== 'callable') {
+            if ('callable' !== $type)
+            {
                 return [$this->guessName($type), $fromComment];
             }
         }
+
         return [null, false];
     }
 
     protected function readTypeFromPropertyComment(\ReflectionProperty $property): ?string
     {
         $docComment = $property->getDocComment();
-        if (! $docComment) {
+        if (!$docComment)
+        {
             return null;
         }
-        if (preg_match('/@var\s+([^\s]+)/', $docComment, $matches)) {
+        if (preg_match('/@var\s+([^\s]+)/', $docComment, $matches))
+        {
             [, $type] = $matches;
-        } else {
+        }
+        else
+        {
             return null;
         }
 

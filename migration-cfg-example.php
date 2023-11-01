@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 return [
@@ -8,7 +9,7 @@ return [
         // 'testdox',
     ],
     'globalIgnoredNamespace' => [],
-    'globalImports' => [
+    'globalImports'          => [
         // 'oa', 'OpenApi\Annotations',
     ],
 ];

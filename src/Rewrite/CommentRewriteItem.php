@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Imiphp\Tool\AnnotationMigration\Rewrite;
@@ -12,7 +13,6 @@ class CommentRewriteItem
         readonly public ?\PhpParser\Comment\Doc $rawDoc,
         readonly public string $newComment,
         readonly public string $newAttribute,
-    )
-    {
+    ) {
     }
 }

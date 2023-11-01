@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Imiphp\Tool\AnnotationMigration\Command;
@@ -23,7 +24,7 @@ class AnnotationRewriteCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addOption('dir', null, InputOption::VALUE_OPTIONAL|InputOption::VALUE_IS_ARRAY, '自定义扫描目录', ['src'])
+            ->addOption('dir', null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, '自定义扫描目录', ['src'])
             ->addOption('dry-run', 'd', InputOption::VALUE_NONE, '尝试运行，不生成文件')
             ->addOption('catch-continue', null, InputOption::VALUE_NEGATABLE, '遇到异常时继续', true)
             ->addOption('error-continue', null, InputOption::VALUE_NEGATABLE, '遇到错误时继续', true)
@@ -35,30 +36,40 @@ class AnnotationRewriteCommand extends Command
     {
         $generateConfiguration = $input->getOption('init-config');
 
-        if ($generateConfiguration) {
-            if (\file_exists('./migration-cfg.php')) {
+        if ($generateConfiguration)
+        {
+            if (file_exists('./migration-cfg.php'))
+            {
                 $output->writeln('Configuration file migration-project-params.php already exists');
             }
-            \copy(__DIR__ . '/../../migration-cfg-example.php', './migration-cfg.php');
+            copy(__DIR__ . '/../../migration-cfg-example.php', './migration-cfg.php');
             $output->writeln('Generate configuration file migration-cfg.php');
+
             return 0;
         }
 
-        if (\defined('MIGRATION_PROJECT_PARAMS') && !empty(MIGRATION_PROJECT_PARAMS)) {
+        if (\defined('MIGRATION_PROJECT_PARAMS') && !empty(MIGRATION_PROJECT_PARAMS))
+        {
             $config = MIGRATION_PROJECT_PARAMS;
 
-            if (\is_array($config['globalIgnoredName'] ?? null)) {
-                foreach ($config['globalIgnoredName'] as $name) {
+            if (\is_array($config['globalIgnoredName'] ?? null))
+            {
+                foreach ($config['globalIgnoredName'] as $name)
+                {
                     AnnotationReader::addGlobalIgnoredName($name);
                 }
             }
-            if (\is_array($config['globalIgnoredNamespace'] ?? null)) {
-                foreach ($config['globalIgnoredNamespace'] as $namespace) {
+            if (\is_array($config['globalIgnoredNamespace'] ?? null))
+            {
+                foreach ($config['globalIgnoredNamespace'] as $namespace)
+                {
                     AnnotationReader::addGlobalIgnoredNamespace($namespace);
                 }
             }
-            if (\is_array($config['globalImports'] ?? null)) {
-                foreach ($config['globalImports'] as $name => $class) {
+            if (\is_array($config['globalImports'] ?? null))
+            {
+                foreach ($config['globalImports'] as $name => $class)
+                {
                     AnnotationReader::addGlobalImports($name, $class);
                 }
             }
@@ -74,9 +85,7 @@ class AnnotationRewriteCommand extends Command
             ->files()
             ->ignoreVCS(true)
             ->path('.php')
-            ->filter(function (\SplFileInfo $file) {
-                return !\preg_match('#[\/]?vendor[\/]#iu', $file->getPathname());
-            })
+            ->filter(static fn (\SplFileInfo $file) => !preg_match('#[\/]?vendor[\/]#iu', $file->getPathname()))
             ->in($dirs);
 
         $logger = new ConsoleLogger($output);
@@ -84,37 +93,53 @@ class AnnotationRewriteCommand extends Command
         $generator = new CodeRewriteGenerator($logger, $output->isDebug());
 
         $isError = false;
-        foreach ($finder as $item) {
-            try {
+        foreach ($finder as $item)
+        {
+            try
+            {
                 $handle = $generator->generate(filename: $item->getRealPath());
-            } catch (ErrorAbortException $abortException) {
+            }
+            catch (ErrorAbortException $abortException)
+            {
                 $isError = true;
 
                 $output->writeln("Error\t{$item->getRealPath()}");
-                if ($isErrorContinue) {
+                if ($isErrorContinue)
+                {
                     continue;
-                } else {
+                }
+                else
+                {
                     break;
                 }
-            } catch (\Throwable $throwable) {
+            }
+            catch (\Throwable $throwable)
+            {
                 $isError = true;
 
                 $output->writeln("Error\t{$item->getRealPath()}");
                 $output->writeln('> ' . $throwable);
                 $output->writeln('> ' . $throwable->getTraceAsString());
-                if ($isCatchContinue) {
+                if ($isCatchContinue)
+                {
                     continue;
-                } else {
+                }
+                else
+                {
                     break;
                 }
             }
 
-            if ($handle->isModified()) {
+            if ($handle->isModified())
+            {
                 $output->writeln("Rewrite\t{$item->getRealPath()}");
-                if (!$isDryRun) {
+                if (!$isDryRun)
+                {
                     file_put_contents($item->getRealPath(), $handle->rewriteCode());
                 }
-            } else {
+            }
+            else
+            {
                 $output->writeln("Skip\t{$item->getRealPath()}");
             }
         }

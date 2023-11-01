@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Imiphp\Tool\AnnotationMigration\Visitor;
@@ -17,12 +18,12 @@ use Yurun\Doctrine\Common\Annotations\Reader;
 
 class AttributeRewriteVisitor extends NodeVisitorAbstract
 {
-    use RewritePropertyHelperTrait;
     use RewriteCommentDocHelperTrait;
+    use RewritePropertyHelperTrait;
 
     protected Reader $reader;
 
-    protected BuilderFactory    $factory;
+    protected BuilderFactory $factory;
     protected ?\ReflectionClass $topClassReflection = null;
 
     protected ?Node\Stmt\Namespace_ $namespace = null;
@@ -40,8 +41,7 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
         readonly public array $annotations = [],
         readonly public LoggerInterface $logger = new NullLogger(),
         readonly public bool $debug = false,
-    )
-    {
+    ) {
         $this->reader = $this->handleCode->reader;
         $this->factory = new BuilderFactory();
     }
@@ -57,51 +57,69 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
         $this->handleCode->clearRewriteQueue();
     }
 
-    public function enterNode(Node $node)
+    public function enterNode(Node $node): void
     {
-        if ($this->isAbort) {
+        if ($this->isAbort)
+        {
             return;
         }
 
-        switch (true) {
+        switch (true)
+        {
             case $node instanceof Node\Stmt\Namespace_:
-                if (null !== $this->namespace && $node->name !== $this->namespace->name) {
+                if (null !== $this->namespace && $node->name !== $this->namespace->name)
+                {
                     // 不支持多个类声明
                     $this->logger->warning('Multiple namespace not supported');
                     $this->abort();
+
                     return;
                 }
                 $this->namespace = $node;
-                if ($this->debug) {
+                if ($this->debug)
+                {
                     $this->logger->debug("> Enter block namespace: {$node?->name}");
                 }
                 break;
             case $node instanceof Node\Stmt\Class_:
                 $this->currentClass = $node;
-                if ($node->isAnonymous()) {
+                if ($node->isAnonymous())
+                {
                     // 跳过匿名
                     return;
-                } elseif (null !== $this->topClassReflection) {
+                }
+                elseif (null !== $this->topClassReflection)
+                {
                     // 不支持多个类声明
                     $this->logger->warning('Multiple class not supported');
                     $this->abort();
+
                     return;
                 }
-                if ($this->namespace) {
+                if ($this->namespace)
+                {
                     $class = $this->namespace->name . '\\' . $node->name;
-                } else {
+                }
+                else
+                {
                     $class = (string) $node->name;
                 }
-                if ($this->debug) {
-                    $this->logger->debug("> Enter block class: $class");
+                if ($this->debug)
+                {
+                    $this->logger->debug("> Enter block class: {$class}");
                 }
-                try {
+                try
+                {
                     $reflection = new \ReflectionClass($class);
-                } catch (\ReflectionException $e) {
-                    $this->logger->warning("Class not exists: $class");
+                }
+                catch (\ReflectionException $e)
+                {
+                    $this->logger->warning("Class not exists: {$class}");
+
                     return;
                 }
-                if (!$reflection->isSubclassOf(ImiAnnotationBase::class)) {
+                if (!$reflection->isSubclassOf(ImiAnnotationBase::class))
+                {
                     // 跳过非注解类
                     return;
                 }
@@ -109,7 +127,8 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
                 $this->topClassReflection = $reflection;
                 break;
             case $node instanceof Node\Stmt\Use_:
-                foreach ($node->uses as $use) {
+                foreach ($node->uses as $use)
+                {
                     $this->uses[] = $use;
                 }
                 break;
@@ -118,43 +137,49 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
 
     public function leaveNode(Node $node): ?Node
     {
-        if ($this->isAbort) {
+        if ($this->isAbort)
+        {
             return null;
         }
-        if ($node instanceof Node\Stmt\ClassLike) {
-            if (null !== $this->currentClass && \spl_object_id($this->currentClass) !== \spl_object_id($node)) {
+        if ($node instanceof Node\Stmt\ClassLike)
+        {
+            if (null !== $this->currentClass && spl_object_id($this->currentClass) !== spl_object_id($node))
+            {
                 throw new \RuntimeException('Class node not match');
             }
             $this->currentClass = null;
         }
-        if (null === $this->topClassReflection) {
+        if (null === $this->topClassReflection)
+        {
             return null;
         }
-        if ($this->currentClass instanceof Node\Stmt\Class_ && $this->currentClass?->isAnonymous()) {
+        if ($this->currentClass instanceof Node\Stmt\Class_ && $this->currentClass?->isAnonymous())
+        {
             // 匿名类不处理
             return null;
         }
 
-        return match (true) {
+        return match (true)
+        {
             $node instanceof Node\Stmt\ClassMethod => $this->generateClassMethodAttributes(/* @var $node Node\Stmt\ClassMethod */ $node),
-            default => null,
+            default                                => null,
         };
     }
 
     private function generateClassMethodAttributes(Node\Stmt\ClassMethod $node): ?Node\Stmt\ClassMethod
     {
-        if ('__construct' !== (string) $node->name) {
+        if ('__construct' !== (string) $node->name)
+        {
             return null;
         }
+
         return $this->migrationConstruct($node);
     }
 
-    /**
-     * @param ImiAnnotationBase[] $annotations
-     */
     protected function migrationConstruct(Node\Stmt\ClassMethod $node): Node\Stmt\ClassMethod
     {
-        if ($this->debug) {
+        if ($this->debug)
+        {
             $this->logger->debug("> Method: {$this->currentClass->name}::{$node->name}");
         }
 
@@ -162,14 +187,17 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
 
         $props = $this->currentClass->getProperties();
         $newParams = [];
-        foreach ($node->getParams() as $param) {
-            if ('__data' === $param->var->name) {
+        foreach ($node->getParams() as $param)
+        {
+            if ('__data' === $param->var->name)
+            {
                 $isModified = true;
                 continue;
             }
-            if (!isset($props[$param->var->name]) && ($param->flags & Node\Stmt\Class_::MODIFIER_PRIVATE) === 0) {
+            if (!isset($props[$param->var->name]) && ($param->flags & Node\Stmt\Class_::MODIFIER_PRIVATE) === 0)
+            {
                 // 提升属性
-                $param->flags = $param->flags | Node\Stmt\Class_::MODIFIER_PUBLIC;
+                $param->flags |= Node\Stmt\Class_::MODIFIER_PUBLIC;
 
                 $isModified = true;
             }
@@ -179,22 +207,28 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
         $classCommentDoc = Helper::arrayValueLast($this->currentClass->getComments());
         $classComments = $classCommentDoc?->getText();
 
-        if ($isModified) {
+        if ($isModified)
+        {
             // 重写类属性注解
             $classCommentsLines = $this->parseCommentsProperty($classComments);
             $newClassComments = $this->refactorCommentsProperty($classCommentsLines, $newParams);
 
-            if ($newClassComments !== $classComments) {
+            if ($newClassComments !== $classComments)
+            {
                 $this->currentClass->setDocComment(new Doc($newClassComments));
 
                 // 重写方法注解
                 $methodCommentDoc = Helper::arrayValueLast($node->getComments());
                 $methodComments = $methodCommentDoc?->getText();
-                if ($methodComments) {
+                if ($methodComments)
+                {
                     $methodComments = $this->cleanAnnotationFromComments($methodComments, $newParams);
-                    if (self::isEmptyComments(\explode("\n", $methodComments))) {
+                    if (self::isEmptyComments(explode("\n", $methodComments)))
+                    {
                         $node->setDocComment(new Doc(''));
-                    } else {
+                    }
+                    else
+                    {
                         $node->setDocComment(new Doc($methodComments));
                     }
                 }
@@ -204,14 +238,14 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
             $this->handleCode->setModified();
         }
 
-        if ($this->handleCode->isModified()) {
+        if ($this->handleCode->isModified())
+        {
         }
 
         return $node;
     }
 
     /**
-     * @param string $comments
      * @return array<array{
      *   index: int,
      *   raw: string,
@@ -226,30 +260,33 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
      */
     protected function parseCommentsProperty(string $comments): array
     {
-        $comments = \explode("\n", $comments);
+        $comments = explode("\n", $comments);
 
         $output = [];
-        foreach ($comments as $i => $rawLine) {
+        foreach ($comments as $i => $rawLine)
+        {
             if (
-                !(preg_match('/^\s*\/\*+$/u', $rawLine) === 0
-                    && preg_match('/^\s*\*+\/$/u', $rawLine) === 0
+                !(0 === preg_match('/^\s*\/\*+$/u', $rawLine)
+                    && 0 === preg_match('/^\s*\*+\/$/u', $rawLine)
                 )
             ) {
                 continue;
             }
-            if (!preg_match('/^\s*\*\s+@(property|param)/', $rawLine)) {
+            if (!preg_match('/^\s*\*\s+@(property|param)/', $rawLine))
+            {
                 $output[] = ['index' => $i, 'raw' => $rawLine, 'kind' => 'raw'];
                 continue;
             }
 
-            if (!preg_match('/^\*\s+@((?:property|param)\S*?)\s+(\S+)\s+\$(\S+)(?:\s([\S\s]+))?/', trim($rawLine), $matchs, PREG_UNMATCHED_AS_NULL)) {
+            if (!preg_match('/^\*\s+@((?:property|param)\S*?)\s+(\S+)\s+\$(\S+)(?:\s([\S\s]+))?/', trim($rawLine), $matchs, \PREG_UNMATCHED_AS_NULL))
+            {
                 $output[] = ['index' => $i, 'raw' => $rawLine, 'kind' => 'raw'];
                 continue;
             }
 
-            $head        = trim($matchs[1]);
-            $propType    = trim($matchs[2]);
-            $propName    = trim($matchs[3]);
+            $head = trim($matchs[1]);
+            $propType = trim($matchs[2]);
+            $propName = trim($matchs[3]);
             $propComment = $matchs[4] ? trim($matchs[4]) : null;
 
             $line = ['index' => $i, 'raw' => $rawLine, 'kind' => $head, 'meta' => [
@@ -278,48 +315,57 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
      *    },
      *  }> $comments
      * @param array<Node\Param> $props
-     * @return string
      */
     protected function refactorCommentsProperty(array $comments, array $props): ?string
     {
         $classComments = [];
 
         $propsMap = [];
-        foreach ($props as $prop) {
+        foreach ($props as $prop)
+        {
             $propsMap[$prop->var->name] = $prop;
         }
 
         $commentPropMap = [];
-        foreach ($comments as $comment) {
-            if ('property' !== $comment['kind']) {
+        foreach ($comments as $comment)
+        {
+            if ('property' !== $comment['kind'])
+            {
                 $classComments[] = $comment['raw'];
                 continue;
             }
             $meta = $comment['meta'];
             $prop = $propsMap[$meta['name']] ?? null;
-            if (empty($prop)) {
+            if (empty($prop))
+            {
                 $classComments[] = $comment['raw'];
                 continue;
             }
             $commentPropMap[$meta['name']] = $comment;
         }
 
-        foreach ($propsMap as $name => $prop) {
+        foreach ($propsMap as $name => $prop)
+        {
             $meta = $commentPropMap[$name]['meta'] ?? null;
             $methodComments = [];
-            if (!empty($meta['comment'])) {
+            if (!empty($meta['comment']))
+            {
                 $methodComments[] = '* ' . $meta['comment'];
-            };
-            if (empty($prop->type)) {
+            }
+            if (empty($prop->type))
+            {
                 // 使用文档注解类型
                 $methodComments[] = "* @var {$meta['type']}";
-            } elseif (\str_contains($propRawType = $this->generator->getPrinter()->prettyPrint([$prop->type]), 'callable') || \str_contains($meta['type'], 'callable')) {
+            }
+            elseif (str_contains($propRawType = $this->generator->getPrinter()->prettyPrint([$prop->type]), 'callable') || str_contains($meta['type'], 'callable'))
+            {
                 // callable 不能作为属性类型
                 $propRawType = $propRawType ?: $meta['type'];
                 $methodComments[] = "* @var {$propRawType}";
                 $prop->type = null;
             }
-            if (!empty($methodComments)) {
+            if (!empty($methodComments))
+            {
                 $prop->setDocComment(new Doc("/**\n " . implode("\n ", $methodComments) . "\n */"));
             }
         }
@@ -335,19 +381,23 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
         $lines = $this->parseCommentsProperty($comments);
 
         $propsMap = [];
-        foreach ($props as $prop) {
+        foreach ($props as $prop)
+        {
             $propsMap[$prop->var->name] = $prop;
         }
 
         $newComments = [];
-        foreach ($lines as $comment) {
-            if ('param' !== $comment['kind']) {
+        foreach ($lines as $comment)
+        {
+            if ('param' !== $comment['kind'])
+            {
                 $newComments[] = $comment['raw'];
                 continue;
             }
             $meta = $comment['meta'];
             $prop = $propsMap[$meta['name']] ?? null;
-            if (empty($prop)) {
+            if (empty($prop))
+            {
                 $newComments[] = $comment['raw'];
             }
         }

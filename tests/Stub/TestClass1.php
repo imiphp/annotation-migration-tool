@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Imiphp\Tests\Stub;
 
 use Imi\Aop\Annotation\Inject;
@@ -18,7 +20,9 @@ use Imi\Util\ImiPriority;
 /**
  * @Facade(class="Yurun\Swoole\CoPool\ChannelContainer", request=false, args={})
  * @Facade(class=WSConfig::class, request=false, args={})
+ *
  * @Bean(name="hotUpdate", env="cli")
+ *
  * @Listener(eventName="IMI.APP_RUN", priority=ImiPriority::IMI_MAX, one=true)
  */
 #[Bean(name: 'test456', env: 'fpm')]
@@ -35,26 +39,25 @@ class TestClass1
     public IHttpResponse $response;
 
     /**
-     * 测试属性123
+     * 测试属性123.
      *
      * @Inject("CronManager")
      */
     protected ICronManager $cronManager;
 
     /**
-     * 测试属性123
+     * 测试属性123.
      *
      * @Inject("CronManager2")
      */
     protected $cronManager2;
 
     /**
-     * 测试方法
+     * 测试方法.
      *
      * @Cacheable(
      *      key="test:{id}",
      *  )
-     *
      * @Cacheable(
      *     key="test:{id}",
      *     ttl=1,
@@ -74,6 +77,7 @@ class TestClass1
      * SSE.
      *
      * @Action
+     *
      * @WSConfig(parserClass=\Imi\Server\DataParser\JsonObjectParser::class)
      */
     public function sse(): void
