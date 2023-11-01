@@ -352,12 +352,12 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
             {
                 $methodComments[] = '* ' . $meta['comment'];
             }
-            if (empty($prop->type))
+            if (empty($prop->type) && isset($meta['type']))
             {
                 // 使用文档注解类型
                 $methodComments[] = "* @var {$meta['type']}";
             }
-            elseif (str_contains($propRawType = $this->generator->getPrinter()->prettyPrint([$prop->type]), 'callable') || str_contains($meta['type'], 'callable'))
+            elseif (($prop->type && str_contains($propRawType = $this->generator->getPrinter()->prettyPrint([$prop->type]), 'callable')) || str_contains($meta['type'] ?? '', 'callable'))
             {
                 // callable 不能作为属性类型
                 $propRawType = $propRawType ?: $meta['type'];
