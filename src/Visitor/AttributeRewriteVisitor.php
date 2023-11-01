@@ -204,6 +204,20 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
             $newParams[] = $param;
         }
 
+        $codeBlock = $this->generator->getPrinter()->prettyPrint($node->getStmts());
+
+        if ($codeBlock === 'parent::__construct(...\func_get_args());')
+        {
+            // 移除构造方法冗余代码
+            $node->stmts = [];
+            $isModified = true;
+        }
+        else
+        {
+            // 方法存在代码块，请检查
+            $this->logger->warning("Method {$this->currentClass->name}::{$node->name} has code block, please check");
+        }
+
         $classCommentDoc = Helper::arrayValueLast($this->currentClass->getComments());
         $classComments = $classCommentDoc?->getText();
 
@@ -360,9 +374,10 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
             elseif (($prop->type && str_contains($propRawType = $this->generator->getPrinter()->prettyPrint([$prop->type]), 'callable')) || str_contains($meta['type'] ?? '', 'callable'))
             {
                 // callable 不能作为属性类型
-                $propRawType = $propRawType ?: $meta['type'];
+                $propRawType = empty($propRawType) ? $meta['type'] : $propRawType;
                 $methodComments[] = "* @var {$propRawType}";
                 $prop->type = null;
+                unset($propRawType);
             }
             if (!empty($methodComments))
             {

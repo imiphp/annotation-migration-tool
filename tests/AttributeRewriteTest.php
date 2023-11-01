@@ -37,7 +37,7 @@ class AttributeRewriteTest extends TestCase
             echo $log . \PHP_EOL;
         }
 
-        //        echo $handle->execPrintStmt(), PHP_EOL;
+        // echo $handle->execPrintStmt(), PHP_EOL;
 
         $this->assertTrue(true);
         $this->assertEquals(
@@ -115,7 +115,46 @@ class AttributeRewriteTest extends TestCase
                     public \$call2 = null
                 )
                 {
-                    parent::__construct(...\\func_get_args());
+                }
+            }
+            PHP,
+        ];
+
+        yield 'class_construct_warning' => [
+            __DIR__ . '/StubAttribute/TestConstruct.php',
+            <<<PHP
+            <?php
+            
+            declare (strict_types=1);
+            namespace Imiphp\Tests\StubAttribute;
+            
+            use Imi\Bean\Annotation\Base;
+            /**
+             * 回调注解.
+             *
+             * @Annotation
+             *
+             * @Target({"PROPERTY", "ANNOTATION"})
+             *
+            */
+            #[\Attribute(\Attribute::TARGET_PROPERTY)]
+            class TestConstruct extends Base
+            {
+                
+                public function __construct(
+                    /**
+                     * 类名，或者传入对象
+                     * @var string|object
+                     */
+                    public \$class = null,
+                    /**
+                     * 方法名
+                     */
+                    public string \$method = ''
+                )
+                {
+                    // parent::__construct(...\\func_get_args());
+                    \$this->method = \$class . \$method;
                 }
             }
             PHP,
