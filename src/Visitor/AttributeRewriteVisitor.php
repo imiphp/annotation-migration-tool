@@ -206,7 +206,7 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
 
         $codeBlock = $this->generator->getPrinter()->prettyPrint($node->getStmts());
 
-        if ($codeBlock === 'parent::__construct(...\func_get_args());')
+        if ('parent::__construct(...\func_get_args());' === $codeBlock)
         {
             // 移除构造方法冗余代码
             $node->stmts = [];
