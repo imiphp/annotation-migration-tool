@@ -1,0 +1,52 @@
+name: Coding Standards
+
+on:
+  push:
+    paths-ignore:
+      - "README.md"
+  pull_request:
+    paths-ignore:
+      - "README.md"
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+          extensions: mbstring #optional, setup extensions
+          coverage: nano #optional, setup coverage driver
+
+      - name: Check Version
+        run: |
+          php -v
+          php -m
+          composer -V
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate
+
+      - name: Get composer cache directory
+        id: composer-cache
+        shell: "bash"
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache vendor
+        uses: actions/cache@v3
+        env:
+          cache-name: composer-cache
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: phpcs-build-${{ env.cache-name }}
+
+      - name: Install dependencies (composer.lock)
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run test suite
+        run: ./vendor/bin/php-cs-fixer fix --dry-run --diff -v
