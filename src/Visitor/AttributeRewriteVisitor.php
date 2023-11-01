@@ -215,7 +215,7 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
         else
         {
             // 方法存在代码块，请检查
-            $this->logger->warning("Method {$this->currentClass->name}::{$node->name} has code block, please check");
+            $this->logger->warning("Method {$this->namespace->name}\\{$this->currentClass->name}::{$node->name} has code block, please check");
         }
 
         $classCommentDoc = Helper::arrayValueLast($this->currentClass->getComments());
