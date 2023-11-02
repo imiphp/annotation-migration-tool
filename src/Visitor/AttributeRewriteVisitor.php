@@ -161,9 +161,43 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
 
         return match (true)
         {
+            $node instanceof Node\Stmt\ClassLike => $this->generateClass(/* @var $node Node\Stmt\ClassLike */ $node),
             $node instanceof Node\Stmt\ClassMethod => $this->generateClassMethodAttributes(/* @var $node Node\Stmt\ClassMethod */ $node),
             default                                => null,
         };
+    }
+
+    private function generateClass(Node\Stmt\ClassLike $node): ?Node\Stmt\ClassLike
+    {
+        if ($this->debug)
+        {
+            $this->logger->debug("> Class: {$node->name}");
+        }
+
+        $newStmts = [];
+        foreach ($node->stmts as $stmt) {
+            if ($stmt instanceof Node\Stmt\Property) {
+                $newProps = [];
+                foreach ($stmt->props as $prop) {
+                    if ($prop instanceof Node\Stmt\PropertyProperty && 'defaultFieldName' === $prop->name->toString()) {
+                        $this->handleCode->setModified();
+                        continue;
+                    }
+                    $newProps[] = $prop;
+                }
+                if ($newProps) {
+                    $newStmts[] = $newProps;
+                }
+            } else {
+                $newStmts[] = $stmt;
+            }
+        }
+        if ($this->handleCode->isModified()) {
+            $node->stmts = $newStmts;
+            $this->handleCode->setModified();
+        }
+
+        return $node;
     }
 
     private function generateClassMethodAttributes(Node\Stmt\ClassMethod $node): ?Node\Stmt\ClassMethod

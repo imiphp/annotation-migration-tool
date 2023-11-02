@@ -66,10 +66,6 @@ class AttributeRewriteTest extends TestCase
             #[\Attribute(\Attribute::TARGET_CLASS)]
             class TestConsumer extends Base
             {
-                /**
-                 * {@inheritDoc}
-                 */
-                protected ?string \$defaultFieldName = 'tag';
                 
                 public function __construct(
                     /**
