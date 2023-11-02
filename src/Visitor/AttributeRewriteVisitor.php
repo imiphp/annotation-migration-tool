@@ -161,7 +161,7 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
 
         return match (true)
         {
-            $node instanceof Node\Stmt\ClassLike => $this->generateClass(/* @var $node Node\Stmt\ClassLike */ $node),
+            $node instanceof Node\Stmt\ClassLike   => $this->generateClass(/* @var $node Node\Stmt\ClassLike */ $node),
             $node instanceof Node\Stmt\ClassMethod => $this->generateClassMethodAttributes(/* @var $node Node\Stmt\ClassMethod */ $node),
             default                                => null,
         };
@@ -175,24 +175,32 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
         }
 
         $newStmts = [];
-        foreach ($node->stmts as $stmt) {
-            if ($stmt instanceof Node\Stmt\Property) {
+        foreach ($node->stmts as $stmt)
+        {
+            if ($stmt instanceof Node\Stmt\Property)
+            {
                 $newProps = [];
-                foreach ($stmt->props as $prop) {
-                    if ($prop instanceof Node\Stmt\PropertyProperty && 'defaultFieldName' === $prop->name->toString()) {
+                foreach ($stmt->props as $prop)
+                {
+                    if ($prop instanceof Node\Stmt\PropertyProperty && 'defaultFieldName' === $prop->name->toString())
+                    {
                         $this->handleCode->setModified();
                         continue;
                     }
                     $newProps[] = $prop;
                 }
-                if ($newProps) {
+                if ($newProps)
+                {
                     $newStmts[] = $newProps;
                 }
-            } else {
+            }
+            else
+            {
                 $newStmts[] = $stmt;
             }
         }
-        if ($this->handleCode->isModified()) {
+        if ($this->handleCode->isModified())
+        {
             $node->stmts = $newStmts;
             $this->handleCode->setModified();
         }
