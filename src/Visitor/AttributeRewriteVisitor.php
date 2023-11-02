@@ -204,7 +204,8 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
             $newParams[] = $param;
         }
 
-        if (!empty($node->getStmts())) {
+        if (!empty($node->getStmts()))
+        {
             $codeBlock = $this->generator->getPrinter()->prettyPrint($node->getStmts());
 
             if ('parent::__construct(...\func_get_args());' === $codeBlock)
@@ -343,6 +344,12 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
         {
             if ('property' !== $comment['kind'])
             {
+                if (
+                    str_contains($comment['raw'], '@Annotation')
+                    || str_contains($comment['raw'], '@Target')
+                ) {
+                    continue;
+                }
                 $classComments[] = $comment['raw'];
                 continue;
             }

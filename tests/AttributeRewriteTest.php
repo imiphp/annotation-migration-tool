@@ -60,9 +60,7 @@ class AttributeRewriteTest extends TestCase
             /**
              * 消费者.
              *
-             * @Annotation
              *
-             * @Target({"CLASS"})
              *
             */
             #[\Attribute(\Attribute::TARGET_CLASS)]
@@ -132,9 +130,7 @@ class AttributeRewriteTest extends TestCase
             /**
              * 回调注解.
              *
-             * @Annotation
              *
-             * @Target({"PROPERTY", "ANNOTATION"})
              *
             */
             #[\Attribute(\Attribute::TARGET_PROPERTY)]
