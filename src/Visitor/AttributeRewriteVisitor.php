@@ -204,18 +204,20 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
             $newParams[] = $param;
         }
 
-        $codeBlock = $this->generator->getPrinter()->prettyPrint($node->getStmts());
+        if (!empty($node->getStmts())) {
+            $codeBlock = $this->generator->getPrinter()->prettyPrint($node->getStmts());
 
-        if ('parent::__construct(...\func_get_args());' === $codeBlock)
-        {
-            // 移除构造方法冗余代码
-            $node->stmts = [];
-            $isModified = true;
-        }
-        else
-        {
-            // 方法存在代码块，请检查
-            $this->logger->warning("Method {$this->namespace->name}\\{$this->currentClass->name}::{$node->name} has code block, please check");
+            if ('parent::__construct(...\func_get_args());' === $codeBlock)
+            {
+                // 移除构造方法冗余代码
+                $node->stmts = [];
+                $isModified = true;
+            }
+            else
+            {
+                // 方法存在代码块，请检查
+                $this->logger->warning("Method {$this->namespace->name}\\{$this->currentClass->name}::{$node->name} has code block, please check");
+            }
         }
 
         $classCommentDoc = Helper::arrayValueLast($this->currentClass->getComments());
@@ -250,10 +252,6 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
 
             $node->params = $newParams;
             $this->handleCode->setModified();
-        }
-
-        if ($this->handleCode->isModified())
-        {
         }
 
         return $node;
