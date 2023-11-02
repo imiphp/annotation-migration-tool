@@ -125,6 +125,7 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
                 }
                 // 设置顶级类
                 $this->topClassReflection = $reflection;
+                $this->parseClassComments();
                 break;
             case $node instanceof Node\Stmt\Use_:
                 foreach ($node->uses as $use)
@@ -161,17 +162,43 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
 
         return match (true)
         {
-            $node instanceof Node\Stmt\ClassLike   => $this->generateClass(/* @var $node Node\Stmt\ClassLike */ $node),
+            $node instanceof Node\Stmt\ClassLike   => $this->rewriteClass(/* @var $node Node\Stmt\ClassLike */ $node),
             $node instanceof Node\Stmt\ClassMethod => $this->generateClassMethodAttributes(/* @var $node Node\Stmt\ClassMethod */ $node),
             default                                => null,
         };
     }
 
-    private function generateClass(Node\Stmt\ClassLike $node): ?Node\Stmt\ClassLike
+    private array $classCommentLines = [];
+
+    private function parseClassComments(): void
+    {
+        $node = $this->currentClass;
+
+        $classCommentDoc = Helper::arrayValueLast($node->getComments());
+        $classCommentText = $classCommentDoc?->getText();
+
+        $this->classCommentLines = $this->parseCommentsProperty($classCommentText);
+    }
+
+    private function rewriteClass(Node\Stmt\ClassLike $node): ?Node\Stmt\ClassLike
     {
         if ($this->debug)
         {
             $this->logger->debug("> Class: {$node->name}");
+        }
+
+        $classCommentLines = array_filter(
+            $this->classCommentLines,
+            static fn ($line) => !('property' !== $line['kind'] && (str_contains($line['raw'], '@Annotation') || str_contains($line['raw'], '@Target'))),
+        );
+        if ($this->handleCode->isModified() || $this->classCommentLines !== $classCommentLines)
+        {
+            $classCommentLines = array_column($classCommentLines, 'raw');
+
+            $newClassCommentText = "/**\n" . implode("\n", $classCommentLines) . "\n */";
+            $node->setDocComment(new Doc($newClassCommentText));
+
+            $this->handleCode->setModified();
         }
 
         $newStmts = [];
@@ -263,33 +290,27 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
             }
         }
 
-        $classCommentDoc = Helper::arrayValueLast($this->currentClass->getComments());
-        $classComments = $classCommentDoc?->getText();
+        //        $classCommentDoc = Helper::arrayValueLast($this->currentClass->getComments());
+        //        $classComments = $classCommentDoc?->getText();
 
         if ($isModified)
         {
             // 重写类属性注解
-            $classCommentsLines = $this->parseCommentsProperty($classComments);
-            $newClassComments = $this->refactorCommentsProperty($classCommentsLines, $newParams);
+            $this->classCommentLines = $this->refactorCommentsProperty($this->classCommentLines, $newParams);
 
-            if ($newClassComments !== $classComments)
+            // 重写方法注解
+            $methodCommentDoc = Helper::arrayValueLast($node->getComments());
+            $methodComments = $methodCommentDoc?->getText();
+            if ($methodComments)
             {
-                $this->currentClass->setDocComment(new Doc($newClassComments));
-
-                // 重写方法注解
-                $methodCommentDoc = Helper::arrayValueLast($node->getComments());
-                $methodComments = $methodCommentDoc?->getText();
-                if ($methodComments)
+                $methodComments = $this->cleanAnnotationFromComments($methodComments, $newParams);
+                if (self::isEmptyComments(explode("\n", $methodComments)))
                 {
-                    $methodComments = $this->cleanAnnotationFromComments($methodComments, $newParams);
-                    if (self::isEmptyComments(explode("\n", $methodComments)))
-                    {
-                        $node->setDocComment(new Doc(''));
-                    }
-                    else
-                    {
-                        $node->setDocComment(new Doc($methodComments));
-                    }
+                    $node->setDocComment(new Doc(''));
+                }
+                else
+                {
+                    $node->setDocComment(new Doc($methodComments));
                 }
             }
 
@@ -371,7 +392,7 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
      *  }> $comments
      * @param array<Node\Param> $props
      */
-    protected function refactorCommentsProperty(array $comments, array $props): ?string
+    protected function refactorCommentsProperty(array $comments, array $props): array
     {
         $classComments = [];
 
@@ -386,20 +407,14 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
         {
             if ('property' !== $comment['kind'])
             {
-                if (
-                    str_contains($comment['raw'], '@Annotation')
-                    || str_contains($comment['raw'], '@Target')
-                ) {
-                    continue;
-                }
-                $classComments[] = $comment['raw'];
+                $classComments[] = $comment;
                 continue;
             }
             $meta = $comment['meta'];
             $prop = $propsMap[$meta['name']] ?? null;
             if (empty($prop))
             {
-                $classComments[] = $comment['raw'];
+                $classComments[] = $comment;
                 continue;
             }
             $commentPropMap[$meta['name']] = $comment;
@@ -432,7 +447,7 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
             }
         }
 
-        return "/**\n" . implode("\n", $classComments) . "\n*/";
+        return $classComments;
     }
 
     /**
@@ -464,6 +479,6 @@ class AttributeRewriteVisitor extends NodeVisitorAbstract
             }
         }
 
-        return "/**\n" . implode("\n", $newComments) . "\n*/";
+        return "/**\n" . implode("\n", $newComments) . "\n */";
     }
 }

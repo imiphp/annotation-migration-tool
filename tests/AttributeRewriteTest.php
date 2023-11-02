@@ -62,7 +62,7 @@ class AttributeRewriteTest extends TestCase
              *
              *
              *
-            */
+             */
             #[\Attribute(\Attribute::TARGET_CLASS)]
             class TestConsumer extends Base
             {
@@ -128,7 +128,7 @@ class AttributeRewriteTest extends TestCase
              *
              *
              *
-            */
+             */
             #[\Attribute(\Attribute::TARGET_PROPERTY)]
             class TestConstruct extends Base
             {
@@ -148,6 +148,30 @@ class AttributeRewriteTest extends TestCase
                     // parent::__construct(...\\func_get_args());
                     \$this->method = \$class . \$method;
                 }
+            }
+            PHP,
+        ];
+
+        yield 'class_comment' => [
+            __DIR__ . '/StubAttribute/TestClassComment.php',
+            <<<PHP
+            <?php
+            
+            declare (strict_types=1);
+            namespace Imiphp\Tests\StubAttribute;
+            
+            use Imi\Bean\Annotation\Base;
+            /**
+             * 回调注解.
+             *
+             *
+             *
+             * @property string|object \$class  类名，或者传入对象
+             * @property string        \$method 方法名
+             */
+            #[\Attribute(\Attribute::TARGET_PROPERTY)]
+            class TestClassComment extends Base
+            {
             }
             PHP,
         ];
