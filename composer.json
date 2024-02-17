@@ -22,7 +22,7 @@
         "yurunsoft/doctrine-annotations": "^1.104.3"
     },
     "require-dev": {
-        "imiphp/imi": "3.0.x-dev",
+        "imiphp/imi": "3.0.x-dev#36c5270",
         "php-cs-fixer/shim": "~3.35.1",
         "phpunit/phpunit": "^10.4",
         "symfony/var-dumper": "^6.3"

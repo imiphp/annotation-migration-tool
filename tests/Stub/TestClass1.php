@@ -24,6 +24,7 @@ use Imi\Util\ImiPriority;
  * @Bean(name="hotUpdate", env="cli")
  *
  * @Listener(eventName="IMI.APP_RUN", priority=ImiPriority::IMI_MAX, one=true)
+ * @Listener()
  */
 #[Bean(name: 'test456', env: 'fpm')]
 class TestClass1

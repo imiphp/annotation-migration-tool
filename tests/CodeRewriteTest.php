@@ -73,6 +73,7 @@ class CodeRewriteTest extends TestCase
             #[Facade(class: \Imi\Server\WebSocket\Route\Annotation\WSConfig::class)]
             #[Bean(name: 'hotUpdate', env: 'cli')]
             #[Listener(eventName: 'IMI.APP_RUN', priority: 19940312, one: true)]
+            #[Listener]
             class TestClass1
             {
                 public const DESCRIPTORSPEC = [
